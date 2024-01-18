@@ -1,4 +1,5 @@
 import {
+  AfterViewInit,
   Component,
   ElementRef,
   HostListener,
@@ -10,12 +11,13 @@ import View from 'ol/View';
 import TileLayer from 'ol/layer/Tile';
 import OSM from 'ol/source/OSM';
 import VectorSource from 'ol/source/Vector';
+import Overlay from 'ol/Overlay';
 
 import { unByKey } from 'ol/Observable';
 import { getVectorContext } from 'ol/render';
 import Polyline from 'ol/format/Polyline';
 import Feature from 'ol/Feature';
-import { fromLonLat } from 'ol/proj.js';
+import { fromLonLat, toLonLat } from 'ol/proj.js';
 import { Vector as VectorLayer } from 'ol/layer';
 import {
   Circle as CircleStyle,
@@ -36,6 +38,9 @@ import { Time } from '@angular/common';
 import { CoordinateFormatterService } from './services/coordinate-formatter.service';
 import { Geometry } from 'ol/geom';
 import { faker } from '@faker-js/faker';
+import { defaults as defaultInteractions } from 'ol/interaction';
+import { toStringHDMS } from 'ol/coordinate.js';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 
 const DATES: string[] = ['2022-02-02', '2022-02-03'];
 const IMEIS: string[] = ['751345975112', '891144473251'];
@@ -45,10 +50,10 @@ const IMEIS: string[] = ['751345975112', '891144473251'];
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
 })
-export class AppComponent implements OnInit {
-  coordinates: number[] = [];
-  currentCoordinates: number[] = [];
+export class AppComponent implements OnInit, AfterViewInit {
+  @ViewChild('content') content: ElementRef;
   map: Map;
+
   vectorSource: VectorSource = new VectorSource();
   vectorLayer: VectorLayer<any> = new VectorLayer();
   dates: string[] = DATES;
@@ -60,6 +65,7 @@ export class AppComponent implements OnInit {
   allLocates: Locate[] = [];
   duration: number = 3000;
   tileLayer: TileLayer<any>;
+  hereLayer: TileLayer<any>;
   scroll = false;
   timeout: any;
   endFeature: Feature[] = [];
@@ -67,14 +73,23 @@ export class AppComponent implements OnInit {
   fin: boolean = false;
   timeBegin: Time;
   timeEnd: Time;
+  overlay: Overlay;
   constructor(
     private coordinateFormatterService: CoordinateFormatterService,
-    private _rta: RtaService
+    private _rta: RtaService,
+    public modal: NgbModal
   ) {}
 
+  ngAfterViewInit(): void {
+    this.map.on('click', (event) => {});
+  }
+
   ngOnInit(): void {
-    this.coordinateFormatterService.currentMessage.subscribe((data) => {
-      this.coordinates = data;
+    const container = document.getElementById('popup');
+    const content = document.getElementById('popup-content');
+    this.overlay = new Overlay({
+      element: container!,
+      autoPan: true,
     });
 
     const attributions =
@@ -87,64 +102,135 @@ export class AppComponent implements OnInit {
         tileSize: 512,
       }),
     });
+    this.hereLayer = new TileLayer({
+      source: new XYZ({
+        attributions: '@ Here 2023',
+        url: 'https://2.base.maps.ls.hereapi.com/maptile/2.1/maptile/newest/normal.day/{z}/{x}/{y}/256/png?apiKey=slxATAloyROzSmRPPepO0Hx1dNOrxwSlo2UCCdBXgvY',
+      }),
+    });
     this.map = new Map({
       view: new View({
         center: fromLonLat([48.93255, -19.1555]),
         zoom: 6,
       }),
+      interactions: defaultInteractions({
+        doubleClickZoom: false,
+      }),
       layers: [
         this.tileLayer,
+        // this.hereLayer,
         new VectorLayer({
           source: this.vectorSource,
         }),
       ],
+      overlays: [this.overlay],
     });
 
-    for (let index = 0; index < 3; index++) {
+    for (let index = 0; index < 10; index++) {
       this.allLocates.push(this.generateData());
     }
     this.pasteData();
-
-    // this._rta.getListeLocalisation().subscribe((res: Locate[]) => {
-    //   this.allLocates = res;
-    //   this.mapFunction(this.getSegments(this.allLocates));
-    // });
-    // this._rta
-    //   .getServerSentEvent('http://localhost:3000/getData')
-    //   .subscribe((data) => {
-    //     const da: any = JSON.parse(data.data);
-    //     // da.msg.forEach((element) => {
-    //     //   console.log(element.after);
-    //     // });
-
-    //     const filtredImei: number[] = da.msg.map((item) => {
-    //       return item.after.id;
-    //     });
-    //     console.log(filtredImei);
-    //     this._rta.getItemsById(filtredImei).subscribe((res: Locate[]) => {
-    //       // console.log(res);
-    //       this.allLocates.push(...res);
-    //       this.pasteData();
-    //     });
-    //   });
+    this.map.on('click', (event) => {
+      const feature = this.map.forEachFeatureAtPixel(
+        event.pixel,
+        function (feature) {
+          return feature;
+        }
+      );
+      if (feature) {
+        content!.innerHTML = '';
+        const imei = feature.getProperties()['imei'];
+        const br = document.createElement('br');
+        this.generatePopupContent(imei).map((item) => content!.append(item));
+        const coordinate = event.coordinate;
+        this.overlay.setPosition(coordinate);
+      } else {
+        this.overlay.setPosition(undefined);
+      }
+    });
   }
 
+  // this._rta.getListeLocalisation().subscribe((res: Locate[]) => {
+  //   this.allLocates = res;
+  //   this.mapFunction(this.getSegments(this.allLocates));
+  // });
+  // this._rta
+  //   .getServerSentEvent('http://localhost:3000/getData')
+  //   .subscribe((data) => {
+  //     const da: any = JSON.parse(data.data);
+  //     // da.msg.forEach((element) => {
+  //     //   console.log(element.after);
+  //     // });
+
+  //     const filtredImei: number[] = da.msg.map((item) => {
+  //       return item.after.id;
+  //     });
+  //     console.log(filtredImei);
+  //     this._rta.getItemsById(filtredImei).subscribe((res: Locate[]) => {
+  //       // console.log(res);
+  //       this.allLocates.push(...res);
+  //       this.pasteData();
+  //     });
+  //   });
+
+  generatePopupContent(imei: string): HTMLElement[] {
+    const deplacement = document.createElement('button');
+    deplacement.style.backgroundColor = 'green';
+    deplacement.innerHTML = 'History';
+    deplacement.addEventListener('click', () => {
+      this.getDeplacements(imei);
+    });
+    const maintenance = document.createElement('button');
+    maintenance.style.backgroundColor = 'red';
+    maintenance.innerHTML = 'Maintenance';
+    maintenance.addEventListener('click', () => {
+      this.getMaintenances(imei);
+    });
+    const settings = document.createElement('button');
+    settings.style.backgroundColor = 'cyan';
+    settings.innerHTML = 'Settings';
+    settings.addEventListener('click', () => {
+      this.getSettings(imei);
+    });
+    const deplacementContainer = document.createElement('div');
+    const maintenanceContainer = document.createElement('div');
+    const settingsContainer = document.createElement('div');
+    deplacementContainer.style.paddingBottom = '2px';
+    maintenanceContainer.style.paddingBottom = '2px';
+    deplacementContainer.append(deplacement);
+    maintenanceContainer.append(maintenance);
+    settingsContainer.append(settings);
+
+    return [deplacementContainer, maintenanceContainer, settingsContainer];
+  }
+
+  getDeplacements(imei: string) {
+    console.log('get history', imei);
+  }
+  getMaintenances(imei: string) {
+    console.log('get maintenances', imei);
+  }
+  getSettings(imei: string) {
+    console.log('get settings', imei);
+  }
+
+  closePopup() {
+    this.overlay.setPosition(undefined);
+  }
   generateData() {
     return {
-      // date: new Date('2022-01-02'),
       date: faker.date.between({ from: '2020-01-01', to: '2020-30-01' }),
       device: {
         color: faker.color.rgb(),
-        // color: 'rgb(45, 210, 120)',
-        imei: 'imei',
+        imei: faker.number.int({ max: 10, min: 1 }).toString(),
         nom: 'nom',
       },
       longitude: faker.number.float({
         min: 42.1813607109089,
-        max: 48.1813607109089,
+        max: 60.1813607109089,
       }),
       latitude: faker.number.float({
-        min: -16.42623231077009,
+        min: -20.42623231077009,
         max: -12.42623231077009,
       }),
     };
@@ -190,10 +276,9 @@ export class AppComponent implements OnInit {
         return item.device.imei == imei;
       });
     }
-    // Need to clear data before assign new data
     this.vectorSource.clear();
-    // refresh data in map
-    this.mapFunction(this.getSegments(newArray));
+    this.mapFunction(this.getPoints(newArray));
+    // this.mapFunction(this.getSegments(newArray));
   }
 
   changeDate(event: any) {
@@ -205,150 +290,181 @@ export class AppComponent implements OnInit {
     this.selectedImei = event.target.value;
   }
 
-  getSegments(da: Locate[]): Feature[] {
-    this.endFeature = [];
-    let segment: Feature[] = [];
-    // get all imeis in data
-    let localImei: string[] = da.map((element) => {
-      return element.device.imei;
-    });
-
-    const unique = (value: any, index: any, self: any) => {
-      return self.indexOf(value) === index;
-    };
-    // delete duplicate imei in data
-    localImei = localImei.filter(unique);
-
-    for (let i = 0; i < localImei.length; i++) {
-      const orderedData: Locate[] = da
-        // filter data by Imei
-        .filter((element) => {
-          return element.device.imei == localImei[i];
-        })
-        // arange data by date
-        .sort((a, b) => {
-          const da = new Date(a.date);
-          const db = new Date(b.date);
-          if (da < db) return -1;
-          if (da > db) return 1;
-          return 1;
-        });
-      // Constitute the segments, any ambanymbany any
-      const dt: any[] = orderedData.map((element) => {
-        return fromLonLat([element.longitude, element.latitude]);
+  getPoints(features: Locate[]): Feature[] {
+    const points: Feature[] = [];
+    for (let feature of features) {
+      let feat: Feature = new Feature({
+        type: 'icon',
+        geometry: new Point(fromLonLat([feature.longitude, feature.latitude])),
       });
-      // Opacity for first point = 0.7 and for end of traject  = 1
-      let d: number = 0;
-      let opacity: number = 1;
-      const orderedDataLength: number = orderedData.length - 1;
-      orderedData.map((element) => {
-        if (d === 0) {
-          opacity = 0.7;
-        } else {
-          opacity = 1;
-        }
-        // Each points of map
-        let feat: Feature = new Feature({
-          type: 'icon',
-          geometry: new Point(
-            fromLonLat([element.longitude, element.latitude])
-          ),
-        });
-        feat.setStyle(
-          new Style({
-            image: new Icon({
-              // color: JSON.parse(element.device.color),
-              crossOrigin: 'anonymous',
-              src: 'assets/dot.png',
-              size: [20, 20],
-
-              opacity: opacity,
-            }),
-            text: new Text({
-              textBaseline: 'bottom',
-              offsetY: -15,
-              font: '12px Calibri,sans-serif',
-              fill: new Fill({ color: '#000' }),
-              stroke: new Stroke({
-                color: '#fff',
-                width: 4,
-              }),
-              text: '',
-              // 'Date: ' +
-              // this.formatTime(new Date(element.date).getDate()) +
-              // '/' +
-              // this.formatTime(new Date(element.date).getMonth()) +
-              // '/' +
-              // new Date(element.date).getFullYear() +
-              // 'T' +
-              // this.formatTime(new Date(element.date).getHours()) +
-              // ':' +
-              // this.formatTime(new Date(element.date).getMinutes()) +
-              // ':' +
-              // this.formatTime(new Date(element.date).getSeconds()),
-            }),
-          })
-        );
-        if (d === orderedDataLength) {
-          this.endFeature.push(feat);
-        }
-        d++;
-        segment.push(feat);
-      });
-
-      let distance: number = 0;
-      // Get distance of each segment and add to global distance in meter
-      for (let j = 0; j < orderedData.length - 1; j++) {
-        distance += getDistance(
-          [orderedData[j].longitude, orderedData[j].latitude],
-          [orderedData[j + 1].longitude, orderedData[j + 1].latitude]
-        );
-      }
-      // Get time between first element and last
-      const time: number =
-        (new Date(orderedData[orderedData.length - 1].date).getTime() -
-          new Date(orderedData[0].date).getTime()) /
-        (1000 * 3600);
-      // console.log(time);
-      // set distance in kilometer
-      let vitesse: number = 0;
-      if (time === 0) {
-        vitesse = 0;
-        distance = 0;
-      } else {
-        distance /= 1000;
-        vitesse = distance / time;
-        vitesse = Math.round(vitesse);
-        distance = Math.round(distance);
-      }
-
-      let segmReturn = new Feature({
-        geometry: new LineString([...dt]),
-      });
-
-      // style of segments and push it
-      segmReturn.setStyle(
+      feat.set('imei', feature.device.imei);
+      feat.setStyle(
         new Style({
-          stroke: new Stroke({
-            color: '#d12710',
-            width: 2,
+          image: new Icon({
+            // color: JSON.parse(element.device.color),
+            crossOrigin: 'anonymous',
+            src: 'assets/dot.png',
+            size: [20, 20],
+            opacity: 1,
           }),
           text: new Text({
+            textBaseline: 'bottom',
+            offsetY: -15,
             font: '12px Calibri,sans-serif',
             fill: new Fill({ color: '#000' }),
             stroke: new Stroke({
               color: '#fff',
               width: 4,
             }),
-            // text: 'Distance: ' + distance + 'km Vitesse: ' + vitesse + 'km/h',
             text: '',
           }),
         })
       );
-      segment.push(segmReturn);
+      points.push(feat);
     }
-    return segment;
+    return points;
   }
+
+  // getSegments(da: Locate[]): Feature[] {
+  //   this.endFeature = [];
+  //   let segment: Feature[] = [];
+  //   // get all imeis in data
+  //   let localImei: string[] = da.map((element) => {
+  //     return element.device.imei;
+  //   });
+
+  //   const unique = (value: any, index: any, self: any) => {
+  //     return self.indexOf(value) === index;
+  //   };
+  //   // delete duplicate imei in data
+  //   localImei = localImei.filter(unique);
+
+  //   for (let i = 0; i < localImei.length; i++) {
+  //     const orderedData: Locate[] = da
+  //       // filter data by Imei
+  //       .filter((element) => {
+  //         return element.device.imei == localImei[i];
+  //       })
+  //       // arange data by date
+  //       .sort((a, b) => {
+  //         const da = new Date(a.date);
+  //         const db = new Date(b.date);
+  //         if (da < db) return -1;
+  //         if (da > db) return 1;
+  //         return 1;
+  //       });
+  //     // Constitute the segments, any ambanymbany any
+  //     const dt: any[] = orderedData.map((element) => {
+  //       return fromLonLat([element.longitude, element.latitude]);
+  //     });
+  //     // Opacity for first point = 0.7 and for end of traject  = 1
+  //     let d: number = 0;
+  //     let opacity: number = 1;
+  //     const orderedDataLength: number = orderedData.length - 1;
+  //     orderedData.map((element) => {
+  //       if (d === 0) {
+  //         opacity = 0.7;
+  //       } else {
+  //         opacity = 1;
+  //       }
+  //       // Each points of map
+  //       let feat: Feature = new Feature({
+  //         type: 'icon',
+  //         geometry: new Point(
+  //           fromLonLat([element.longitude, element.latitude])
+  //         ),
+  //       });
+  //       feat.set('imei', localImei[i]);
+  //       feat.setStyle(
+  //         new Style({
+  //           image: new Icon({
+  //             // color: JSON.parse(element.device.color),
+  //             crossOrigin: 'anonymous',
+  //             src: 'assets/dot.png',
+  //             size: [20, 20],
+  //             opacity: opacity,
+  //           }),
+  //           text: new Text({
+  //             textBaseline: 'bottom',
+  //             offsetY: -15,
+  //             font: '12px Calibri,sans-serif',
+  //             fill: new Fill({ color: '#000' }),
+  //             stroke: new Stroke({
+  //               color: '#fff',
+  //               width: 4,
+  //             }),
+  //             text: '',
+  //             // 'Date: ' +
+  //             // this.formatTime(new Date(element.date).getDate()) +
+  //             // '/' +
+  //             // this.formatTime(new Date(element.date).getMonth()) +
+  //             // '/' +
+  //             // new Date(element.date).getFullYear() +
+  //             // 'T' +
+  //             // this.formatTime(new Date(element.date).getHours()) +
+  //             // ':' +
+  //             // this.formatTime(new Date(element.date).getMinutes()) +
+  //             // ':' +
+  //             // this.formatTime(new Date(element.date).getSeconds()),
+  //           }),
+  //         })
+  //       );
+  //       if (d === orderedDataLength) {
+  //         this.endFeature.push(feat);
+  //       }
+  //       d++;
+  //       segment.push(feat);
+  //     });
+
+  //     let distance: number = 0;
+  //     for (let j = 0; j < orderedData.length - 1; j++) {
+  //       distance += getDistance(
+  //         [orderedData[j].longitude, orderedData[j].latitude],
+  //         [orderedData[j + 1].longitude, orderedData[j + 1].latitude]
+  //       );
+  //     }
+  //     const time: number =
+  //       (new Date(orderedData[orderedData.length - 1].date).getTime() -
+  //         new Date(orderedData[0].date).getTime()) /
+  //       (1000 * 3600);
+  //     let vitesse: number = 0;
+  //     if (time === 0) {
+  //       vitesse = 0;
+  //       distance = 0;
+  //     } else {
+  //       distance /= 1000;
+  //       vitesse = distance / time;
+  //       vitesse = Math.round(vitesse);
+  //       distance = Math.round(distance);
+  //     }
+
+  //     let segmReturn = new Feature({
+  //       geometry: new LineString(dt),
+  //     });
+  //     // segmReturn.set('imei', localImei[i]);
+  //     // style of segments and push it
+  //     segmReturn.setStyle(
+  //       new Style({
+  //         stroke: new Stroke({
+  //           color: '#d12710',
+  //           width: 2,
+  //         }),
+  //         text: new Text({
+  //           font: '12px Calibri,sans-serif',
+  //           fill: new Fill({ color: '#000' }),
+  //           stroke: new Stroke({
+  //             color: '#fff',
+  //             width: 4,
+  //           }),
+  //           // text: 'Distance: ' + distance + 'km Vitesse: ' + vitesse + 'km/h',
+  //           text: '',
+  //         }),
+  //       })
+  //     );
+  //     segment.push(segmReturn);
+  //   }
+  //   return segment;
+  // }
 
   mapFunction(segments: Feature[]) {
     // add feature to the vector source
@@ -359,11 +475,11 @@ export class AppComponent implements OnInit {
     const start = Date.now();
 
     let flashGeom: any[] = features.map((element) => {
-      return element.getGeometry().clone();
+      return element.getGeometry()!.clone();
     });
     const listenerKey = this.tileLayer.on('postrender', (event) => {
       const frameState = event.frameState;
-      const elapsed = frameState.time - start;
+      const elapsed = frameState!.time - start;
       if (elapsed >= this.duration) {
         unByKey(listenerKey);
         return;
@@ -398,13 +514,8 @@ export class AppComponent implements OnInit {
     return nombre.toString();
   }
 
-  clickMapa() {
-    this.currentCoordinates = this.coordinates;
-    // this.map.forEachLayerAtPixel(this.map.getEventPixel(event));
-    // to get the layers to use for .getSource().getGetFeatureInfoUrl()
-  }
   @HostListener('wheel', ['$event'])
-  onScroll(event) {
+  onScroll(event: Event) {
     this.scroll = true;
     clearTimeout(this.timeout);
     this.timeout = setTimeout(() => {

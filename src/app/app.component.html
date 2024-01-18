@@ -1,85 +1,93 @@
 <header>
-    <div class="title">
-      Carte {{ currentCoordinates[0] }}{{ currentCoordinates[1] }}
-    </div>
-  </header>
-  <main>
-    <div class="left-bar">
-      <h2>Liste des appareils</h2>
-  
-      <div class="row">
-        <input type="text" #test />
-        {{ test.value }}
+  <div class="title">Carte</div>
+</header>
+<main>
+  <div class="left-bar">
+    <h2>Liste des appareils</h2>
+    <div class="row">
+      <div class="col-md-1"></div>
+      <div class="col-md-10">
+        <input class="form-control" type="text" #test />
+      </div>
+      <div class="col-md-1"></div>
+      {{ test.value }}
+      <div class="col-md-1"></div>
+
+      <div class="form-group col-md-10">
+        <label for="">Date</label>
+        <select (change)="changeDate($event)" class="form-control">
+          <option value="All">All</option>
+          <option *ngFor="let date of dates">
+            {{ date }}
+          </option>
+        </select>
+      </div>
+      <div class="col-md-1"></div>
+
+      <ng-container *ngIf="selectedDate !== 'All'">
         <div class="col-md-1"></div>
-  
-        <div class="form-group col-md-10">
-          <label for="">Date</label>
-          <select (change)="changeDate($event)" class="form-control">
-            <option value="All">All</option>
-            <option *ngFor="let date of dates">
-              {{ date }}
-            </option>
-          </select>
-        </div>
-  
-        <ng-container *ngIf="selectedDate !== 'All'">
-          <div class="col-md-1"></div>
-          <div class="col-md-10">
-            <div class="form-group">
-              <input type="checkbox" [(ngModel)]="debut" name="debut" />
-              <label for="debut"> Début </label>
-              <input
-                class="form-control col-md-12"
-                type="time"
-                step="1"
-                [(ngModel)]="timeBegin"
-                name="timeBegin"
-                [disabled]="debut === false"
-              />
-            </div>
-          </div>
-          <div class="col-md-1"></div>
-  
-          <div class="form-group col-md-10">
-            <input type="checkbox" [(ngModel)]="fin" name="fin" />
-            <label for="fin">fin</label>
-  
+        <div class="col-md-10">
+          <div class="form-group">
+            <input type="checkbox" [(ngModel)]="debut" name="debut" />
+            <label for="debut"> Début </label>
             <input
               class="form-control col-md-12"
               type="time"
               step="1"
-              [(ngModel)]="timeEnd"
-              name="timeEnd"
-              [disabled]="fin === false"
+              [(ngModel)]="timeBegin"
+              name="timeBegin"
+              [disabled]="debut === false"
             />
           </div>
-        </ng-container>
-  
-        <div class="col-md-1"></div>
-        <div class="form-group col-md-10">
-          <label for="">Telephone</label>
-          <select (change)="changeTelephone($event)" class="form-control">
-            <option value="All">All</option>
-            <option *ngFor="let imei of imeis">
-              {{ imei }}
-            </option>
-          </select>
         </div>
         <div class="col-md-1"></div>
-        <button class="btn btn-success col-md-10" (click)="pasteData()">
-          Filtrer
-        </button>
+        <div class="col-md-1"></div>
+
+        <div class="form-group col-md-10">
+          <input type="checkbox" [(ngModel)]="fin" name="fin" />
+          <label for="fin"> Fin </label>
+
+          <input
+            class="form-control col-md-12"
+            type="time"
+            step="1"
+            [(ngModel)]="timeEnd"
+            name="timeEnd"
+            [disabled]="fin === false"
+          />
+        </div>
+        <div class="col-md-1"></div>
+      </ng-container>
+
+      <div class="col-md-1"></div>
+      <div class="form-group col-md-10">
+        <label for="">Appareil</label>
+        <select (change)="changeTelephone($event)" class="form-control">
+          <option value="All">All</option>
+          <option *ngFor="let imei of imeis">
+            {{ imei }}
+          </option>
+        </select>
       </div>
+      <div class="col-md-1"></div>
+      <button class="btn btn-success col-md-10" (click)="pasteData()">
+        Filtrer
+      </button>
     </div>
-    <div class="map-container">
-      <app-map [map]="map" (click)="clickMapa()"></app-map>
-    </div>
-  </main>
-  <footer>
-    <app-scaleline [map]="map"></app-scaleline>
-    <app-mouse-position
-      [map]="map"
-      positionTemplate="{x} longitude, {y} latitude"
-    ></app-mouse-position>
-  </footer>
-  
+  </div>
+  <div class="map-container">
+    <app-map [map]="map"></app-map>
+  </div>
+</main>
+<footer>
+  <app-scaleline [map]="map"></app-scaleline>
+  <app-mouse-position
+    [map]="map"
+    positionTemplate="{x} longitude, {y} latitude"
+  ></app-mouse-position>
+</footer>
+
+<div class="popup" id="popup">
+  <a class="close" (click)="closePopup()" id="popup-close">×</a>
+  <div class="content" id="popup-content"></div>
+</div>
