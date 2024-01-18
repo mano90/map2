@@ -1,13 +1,10 @@
 import { Injectable } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
-import { BehaviorSubject } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
 })
 export class CoordinateFormatterService {
-  private message = new BehaviorSubject<number[]>([]);
-  currentMessage = this.message.asObservable();
   constructor(private decimalPipe: DecimalPipe) {}
 
   numberCoordinates(
@@ -22,10 +19,7 @@ export class CoordinateFormatterService {
     const digitsInfo = `1.${fractionDigits}-${fractionDigits}`;
     const sX = this.decimalPipe.transform(x, digitsInfo);
     const sY = this.decimalPipe.transform(y, digitsInfo);
-    return template.replace('{x}', sX).replace('{y}', sY);
+    return template.replace('{x}', sX!).replace('{y}', sY!);
   }
 
-  changeMessage(message: number[]) {
-    this.message.next(message);
-  }
 }

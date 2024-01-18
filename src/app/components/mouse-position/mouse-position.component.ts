@@ -4,8 +4,6 @@ import {
   ChangeDetectionStrategy,
   Input,
   ElementRef,
-  Output,
-  EventEmitter,
 } from '@angular/core';
 import Map from 'ol/Map';
 import ControlMousePosition from 'ol/control/MousePosition';
@@ -37,8 +35,6 @@ export class MousePositionComponent implements OnInit {
   @Input() positionTemplate: string;
   control: ControlMousePosition;
 
-  // @Output() close = new EventEmitter<any>();
-
   constructor(
     private element: ElementRef,
     private coordinateFormatter: CoordinateFormatterService
@@ -47,21 +43,19 @@ export class MousePositionComponent implements OnInit {
   ngOnInit() {
     this.control = new ControlMousePosition({
       className: 'mouseposition-control',
-      coordinateFormat: (coordinates: number[]) => {
+      coordinateFormat: (coordinates) => {
         this.coordinateFormatter.numberCoordinates(
-          coordinates,
+          coordinates!,
           4,
           this.positionTemplate
         );
-        this.coordinateFormatter.changeMessage(coordinates);
-        return "";
+        return `Longitude: ${coordinates![0].toFixed(
+          4
+        )} , latitude: ${coordinates![1].toFixed(4)}`;
       },
-
       target: this.element.nativeElement,
-      // undefinedHTML: undefined,
       projection: 'EPSG:4326',
     });
     this.map.addControl(this.control);
-    // console.log(this.map.getCode());
   }
 }

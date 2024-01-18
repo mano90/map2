@@ -14,7 +14,7 @@ export class RtaService {
     private http: HttpClient
   ) {}
   getServerSentEvent(url: string) {
-    return Observable.create((observer) => {
+    return Observable.create((observer: any) => {
       const eventSource = this._sseService.getEventeSource(url);
       eventSource.onmessage = (event) => {
         this._zone.run(() => {
