@@ -1,30 +1,51 @@
 :host {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-  }
-  header {
-    background-color: var(--header-color);
-    padding: 2em;
-  }
-  header .title {
-    font-size: 28px;
-  }
-  main {
-    display: flex;
-    flex-grow: 1;
-  }
-  .left-bar {
-    width: 20em;
-    background-color: #efefef;
-  }
-  .map-container {
-    flex-grow: 1;
-  }
-  footer {
-    display: flex;
-    background-color: var(--header-color);
-    padding: 1em;
-    justify-content: space-between;
-  }
-  
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+header {
+  background-color: var(--header-color);
+  padding: 2em;
+}
+header .title {
+  font-size: 28px;
+}
+main {
+  display: flex;
+  flex-grow: 1;
+}
+.left-bar {
+  width: 20em;
+  background-color: #efefef;
+}
+.map-container {
+  flex-grow: 1;
+}
+footer {
+  display: flex;
+  background-color: var(--header-color);
+  padding: 1em;
+  justify-content: space-between;
+}
+.popup {
+  position: absolute;
+  background-color: white;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  padding: 15px;
+  border-radius: 10px;
+  border: 1px solid #cccccc;
+  bottom: 12px;
+  left: -50px;
+  min-width: 200px;
+  font-size: 12px;
+}
+
+.close {
+  text-decoration: none;
+  position: absolute;
+  top: 5px;
+  right: 8px;
+  color: black;
+  font-size: 20px;
+  cursor: pointer;
+}
