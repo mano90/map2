@@ -41,6 +41,7 @@ import { faker } from '@faker-js/faker';
 import { defaults as defaultInteractions } from 'ol/interaction';
 import { toStringHDMS } from 'ol/coordinate.js';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { NgxSpinnerService } from 'ngx-spinner';
 
 const DATES: string[] = ['2022-02-02', '2022-02-03'];
 const IMEIS: string[] = ['751345975112', '891144473251'];
@@ -77,7 +78,8 @@ export class AppComponent implements OnInit, AfterViewInit {
   constructor(
     private coordinateFormatterService: CoordinateFormatterService,
     private _rta: RtaService,
-    public modal: NgbModal
+    public modal: NgbModal,
+    private spinner: NgxSpinnerService
   ) {}
 
   ngAfterViewInit(): void {
@@ -85,6 +87,8 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   ngOnInit(): void {
+    this.spinner.show();
+
     const container = document.getElementById('popup');
     const content = document.getElementById('popup-content');
     this.overlay = new Overlay({
@@ -140,7 +144,6 @@ export class AppComponent implements OnInit, AfterViewInit {
       if (feature) {
         content!.innerHTML = '';
         const imei = feature.getProperties()['imei'];
-        const br = document.createElement('br');
         this.generatePopupContent(imei).map((item) => content!.append(item));
         const coordinate = event.coordinate;
         this.overlay.setPosition(coordinate);
@@ -174,23 +177,23 @@ export class AppComponent implements OnInit, AfterViewInit {
   //   });
 
   generatePopupContent(imei: string): HTMLElement[] {
-    const deplacement = document.createElement('button');
-    deplacement.style.backgroundColor = 'green';
+    const deplacement = this.formatButton(document.createElement('button'));
     deplacement.innerHTML = 'History';
     deplacement.addEventListener('click', () => {
       this.getDeplacements(imei);
+      this.overlay.setPosition(undefined);
     });
-    const maintenance = document.createElement('button');
-    maintenance.style.backgroundColor = 'red';
+    const maintenance = this.formatButton(document.createElement('button'));
     maintenance.innerHTML = 'Maintenance';
     maintenance.addEventListener('click', () => {
       this.getMaintenances(imei);
+      this.overlay.setPosition(undefined);
     });
-    const settings = document.createElement('button');
-    settings.style.backgroundColor = 'cyan';
+    const settings = this.formatButton(document.createElement('button'));
     settings.innerHTML = 'Settings';
     settings.addEventListener('click', () => {
       this.getSettings(imei);
+      this.overlay.setPosition(undefined);
     });
     const deplacementContainer = document.createElement('div');
     const maintenanceContainer = document.createElement('div');
@@ -203,7 +206,58 @@ export class AppComponent implements OnInit, AfterViewInit {
 
     return [deplacementContainer, maintenanceContainer, settingsContainer];
   }
+  formatButton(document: HTMLButtonElement): HTMLButtonElement {
+    document.style.cssText = `
+    width: 150px;
+    align-self: center;
+    background-color: #fff;
+    background-image: none;
+    background-position: 0 90%;
+    background-repeat: repeat no-repeat;
+    background-size: 4px 3px;
+    border-radius: 15px 225px 255px 15px 15px 255px 225px 15px;
+    border-style: solid;
+    border-width: 2px;
+    box-shadow: rgba(0, 0, 0, .2) 15px 28px 25px -18px;
+    box-sizing: border-box;
+    color: #41403e;
+    cursor: pointer;
+    display: inline-block;
+    font-family: Neucha, sans-serif;
+    font-size: 1rem;
+    line-height: 23px;
+    outline: none;
+    padding: .75rem;
+    text-decoration: none;
+    transition: all 235ms ease-in-out;
+    border-bottom-left-radius: 15px 255px;
+    border-bottom-right-radius: 225px 15px;
+    border-top-left-radius: 255px 15px;
+    border-top-right-radius: 15px 225px;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    transition-duration: 0.2s;
+`;
+    document.addEventListener('mouseover', function () {
+      this.style.boxShadow = 'rgba(0, 0, 0, .3) 2px 8px 8px -5px';
+      this.style.transform = 'translate3d(0, 2px, 0)';
+    });
 
+    document.addEventListener('mouseout', function () {
+      this.style.boxShadow = '';
+      this.style.transform = '';
+    });
+
+    document.addEventListener('focus', function () {
+      this.style.boxShadow = 'rgba(0, 0, 0, .3) 2px 8px 4px -6px';
+    });
+
+    document.addEventListener('click', function () {
+      this.style.backgroundColor = 'red';
+    });
+    return document;
+  }
   getDeplacements(imei: string) {
     console.log('get history', imei);
   }
@@ -301,10 +355,11 @@ export class AppComponent implements OnInit, AfterViewInit {
       feat.setStyle(
         new Style({
           image: new Icon({
-            // color: JSON.parse(element.device.color),
-            crossOrigin: 'anonymous',
-            src: 'assets/dot.png',
-            size: [20, 20],
+            anchor: [0.5, 46],
+            anchorXUnits: 'fraction',
+            anchorYUnits: 'pixels',
+            src: 'assets/locationIcons/2.png',
+            scale: [0.09, 0.09],
             opacity: 1,
           }),
           text: new Text({
