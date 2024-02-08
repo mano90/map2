@@ -12,6 +12,12 @@ import { MousePositionComponent } from './components/mouse-position/mouse-positi
 import { FormsModule } from '@angular/forms';
 import { NgxSpinnerModule } from 'ngx-spinner';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { LayoutComponent } from './layout/layout.component';
+import { DeviceSettingsComponent } from './device-settings/device-settings.component';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 
 @NgModule({
   declarations: [
@@ -19,6 +25,8 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
     MapComponent,
     ScalelineComponent,
     MousePositionComponent,
+    LayoutComponent,
+    DeviceSettingsComponent,
   ],
   imports: [
     BrowserModule,
@@ -27,6 +35,10 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
     FormsModule,
     BrowserAnimationsModule,
     NgxSpinnerModule,
+    MatToolbarModule,
+    MatMenuModule,
+    MatButtonModule,
+    MatIconModule,
   ],
   providers: [DecimalPipe],
   bootstrap: [AppComponent],

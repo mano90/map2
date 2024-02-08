@@ -1,0 +1,67 @@
+<div class="container">
+  <h1>Paramètres générales</h1>
+
+  <p>Configurations</p>
+  <form
+    class="example-form"
+    [formGroup]="formGroup"
+    (ngSubmit)="alertFormValues(formGroup)"
+    ngNativeValidate
+  >
+    <div class="row">
+      <div class="col-lg-12">
+        <p>Matériels à afficher</p>
+      </div>
+      <div class="col-lg-4">
+        <mat-slide-toggle color="primary" formControlName="online">
+          En ligne
+        </mat-slide-toggle>
+      </div>
+      <div class="col-lg-4">
+        <mat-slide-toggle color="primary" formControlName="offline">
+          Hors ligne
+        </mat-slide-toggle>
+      </div>
+      <div class="col-lg-4">
+        <mat-slide-toggle color="primary" formControlName="maintenance">
+          En maintenance
+        </mat-slide-toggle>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-lg-12">
+        <p>Date</p>
+      </div>
+      <mat-form-field class="col-lg-6">
+        <mat-label>Debut</mat-label>
+        <input
+          matInput
+          [matDatepicker]="dateDebut"
+          formControlName="dateDebut"
+        />
+        <mat-hint>DD-MM-YYYY</mat-hint>
+        <mat-datepicker-toggle
+          matIconSuffix
+          [for]="dateDebut"
+        ></mat-datepicker-toggle>
+        <mat-datepicker #dateDebut></mat-datepicker>
+      </mat-form-field>
+      <mat-form-field class="col-lg-6">
+        <mat-label>Fin</mat-label>
+        <input matInput [matDatepicker]="dp" formControlName="dateFin" />
+        <mat-hint>DD-MM-YYYY</mat-hint>
+        <mat-datepicker-toggle matIconSuffix [for]="dp"></mat-datepicker-toggle>
+        <mat-datepicker #dp></mat-datepicker>
+      </mat-form-field>
+      <div class="row">
+        <div class="col-lg-12">
+          <mat-error *ngIf="formGroup.invalid"> Invalid date </mat-error>
+        </div>
+      </div>
+    </div>
+    <br /><br />
+    <button [disabled]="formGroup.invalid" mat-raised-button type="submit">
+      Enregistrer
+    </button>
+  </form>
+</div>

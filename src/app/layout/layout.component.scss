@@ -1,0 +1,74 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+.headerImage {
+  width: 50px;
+  height: 50px;
+  margin-right: 10px;
+}
+header {
+  background-color: var(--header-color);
+  // padding: 2em;
+}
+.btn-header {
+  background-color: transparent;
+  color: #efefef;
+}
+.params {
+  float: right;
+  color: white !important;
+  margin-top: 5px;
+  margin-right: 50px;
+}
+.btn-header:hover {
+  border: 1px solid white;
+}
+
+header .title {
+  font-size: 28px;
+  color: #efefef;
+}
+header {
+  background-color: #282a2d;
+}
+main {
+  display: flex;
+  flex-grow: 1;
+}
+.left-bar {
+  padding: 10px;
+  width: 20em;
+  background-color: #efefef;
+}
+.map-container {
+  flex-grow: 1;
+}
+footer {
+  display: flex;
+  background-color: var(--header-color);
+  padding: 1em;
+  justify-content: space-between;
+}
+.popup {
+  position: absolute;
+  background-color: white;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  padding: 15px;
+  border-radius: 10px;
+  border: 1px solid #cccccc;
+  bottom: 12px;
+  left: -50px;
+  font-size: 12px;
+}
+
+.close {
+  text-decoration: none;
+  position: absolute;
+  top: 5px;
+  right: 8px;
+  color: black;
+  font-size: 20px;
+  cursor: pointer;
+}

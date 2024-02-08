@@ -1,0 +1,19 @@
+.container {
+  padding-top: 20px;
+}
+.error {
+  border-color: red;
+}
+
+.mat-form-field-disabled .mat-form-field-underline {
+  height: 0;
+  border-bottom: none;
+}
+
+.mat-input-element:disabled {
+  color: inherit; /* Maintain the original text color */
+  background-color: transparent; /* Maintain the original background color */
+  border: none; /* Remove the border */
+  box-shadow: none; /* Remove the box shadow */
+  cursor: text; /* Maintain the text cursor */
+}

@@ -1,4 +1,4 @@
-import { Device } from './device';
+import { Device } from './Device';
 
 export class Locate {
   id?: number;

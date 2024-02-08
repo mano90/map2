@@ -1,0 +1,130 @@
+<header>
+  <div class="title">
+    <img class="headerImage" src="assets/logo.png" alt="" />
+    Tracking devices
+    <button class="btn btn-outline btn-header" (click)="initialData()">
+      ACCUEIL
+    </button>
+    <button *ngIf="activeDetails" class="btn btn-outline btn-header">
+      DETAILS
+    </button>
+    <button
+      class="btn btn-outline btn-header params"
+      mat-button
+      [matMenuTriggerFor]="belowMenu"
+    >
+      Manorintsoa
+      <mat-icon>keyboard_arrow_down</mat-icon>
+    </button>
+    <mat-menu #belowMenu="matMenu" yPosition="below">
+      <button
+        [routerLink]="['/parametres']"
+        routerLinkActive="router-link-active"
+        mat-menu-item
+      >
+        Parametres
+      </button>
+      <button mat-menu-item>Deconnexion</button>
+    </mat-menu>
+  </div>
+</header>
+
+<main>
+  <div class="left-bar">
+    <h2>Liste des appareils</h2>
+    <div class="row">
+      <div class="col-md-1"></div>
+      <div class="col-md-10">
+        <input class="form-control" type="text" #test />
+      </div>
+      <div class="col-md-1"></div>
+      {{ test.value }}
+      <div class="col-md-1"></div>
+
+      <div class="form-group col-md-10">
+        <label for="">Date</label>
+        <select (change)="changeDate($event)" class="form-control">
+          <option value="All">All</option>
+          <option *ngFor="let date of dates">
+            {{ date }}
+          </option>
+        </select>
+      </div>
+      <div class="col-md-1"></div>
+
+      <ng-container *ngIf="selectedDate !== 'All'">
+        <div class="col-md-1"></div>
+        <div class="col-md-10">
+          <div class="form-group">
+            <input type="checkbox" [(ngModel)]="debut" name="debut" />
+            <label for="debut"> Début </label>
+            <input
+              class="form-control col-md-12"
+              type="time"
+              step="1"
+              [(ngModel)]="timeBegin"
+              name="timeBegin"
+              [disabled]="debut === false"
+            />
+          </div>
+        </div>
+        <div class="col-md-1"></div>
+        <div class="col-md-1"></div>
+
+        <div class="form-group col-md-10">
+          <input type="checkbox" [(ngModel)]="fin" name="fin" />
+          <label for="fin"> Fin </label>
+
+          <input
+            class="form-control col-md-12"
+            type="time"
+            step="1"
+            [(ngModel)]="timeEnd"
+            name="timeEnd"
+            [disabled]="fin === false"
+          />
+        </div>
+        <div class="col-md-1"></div>
+      </ng-container>
+
+      <div class="col-md-1"></div>
+      <div class="form-group col-md-10">
+        <label for="">Appareil</label>
+        <select (change)="changeTelephone($event)" class="form-control">
+          <option value="All">All</option>
+          <option *ngFor="let id of ids">
+            {{ id }}
+          </option>
+        </select>
+      </div>
+      <div class="col-md-1"></div>
+      <!-- <button class="btn btn-success col-md-10" (click)="pasteData()"> -->
+      <!-- Filtrer -->
+      <!-- </button> -->
+    </div>
+  </div>
+  <div class="map-container">
+    <app-map [map]="map"></app-map>
+  </div>
+</main>
+<footer>
+  <app-scaleline [map]="map"></app-scaleline>
+  <app-mouse-position
+    [map]="map"
+    positionTemplate="{x} longitude, {y} latitude"
+  ></app-mouse-position>
+</footer>
+
+<div class="popup" id="popup">
+  <a class="close" (click)="closePopup()" id="popup-close">×</a>
+  <div class="content" id="popup-content"></div>
+</div>
+
+<ngx-spinner
+  bdColor="rgba(51,51,51,0.8)"
+  size="medium"
+  color="#fff"
+  type="ball-scale-multiple"
+>
+  <p style="font-size: 20px; color: white">Loading...</p>
+</ngx-spinner>

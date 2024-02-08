@@ -1,10 +1,21 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
+import { GeneralSettingsComponent } from './general-settings/general-settings.component';
+import { LayoutComponent } from './layout/layout.component';
+import { DeviceSettingsComponent } from './device-settings/device-settings.component';
 
-const routes: Routes = [];
+const routes: Routes = [
+  { path: '', component: LayoutComponent },
+
+  {
+    path: 'parametres',
+    component: GeneralSettingsComponent,
+  },
+  { path: 'device', component: DeviceSettingsComponent },
+];
 
 @NgModule({
   imports: [RouterModule.forRoot(routes)],
-  exports: [RouterModule]
+  exports: [RouterModule],
 })
-export class AppRoutingModule { }
+export class AppRoutingModule {}

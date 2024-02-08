@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, NgZone } from '@angular/core';
 import { Observable } from 'rxjs';
-import { Locate } from 'src/app/classes/locate';
+import { Locate } from 'src/app/classes/Locate';
 import { SseService } from './sse.service';
 
 @Injectable({
