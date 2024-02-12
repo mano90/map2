@@ -7,4 +7,9 @@ export class Device {
   serverAddress: string;
   status: DeviceStatus;
   devicePositions?: Locate[];
+  seuil: number;
+  limiteHG: string;
+  limiteHD: string;
+  limiteBD: string;
+  limiteBG: string;
 }

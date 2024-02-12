@@ -42,11 +42,13 @@ export const MY_FORMATS = {
 
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatButtonModule } from '@angular/material/button';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import {
   MatSlideToggleModule,
   _MatSlideToggleRequiredValidatorModule,
 } from '@angular/material/slide-toggle';
 import { CommonModule } from '@angular/common';
+
 @Component({
   selector: 'app-general-settings',
   templateUrl: './general-settings.component.html',
@@ -63,6 +65,7 @@ import { CommonModule } from '@angular/common';
     MatNativeDateModule,
     MatButtonModule,
     MatFormFieldModule,
+    MatTooltipModule,
   ],
   providers: [
     {
@@ -74,6 +77,18 @@ import { CommonModule } from '@angular/common';
   ],
 })
 export class GeneralSettingsComponent implements OnInit {
+  displayedColumns: string[] = [
+    'select',
+    'name',
+    'serverAddress',
+    'status',
+    'seuil',
+    'limiteHG',
+    'limiteHD',
+    'limiteBD',
+    'limiteBD',
+  ];
+  // dataSource = new MatTableDataSource<any>([yourDataArray]);
   constructor(private _formBuilder: FormBuilder) {}
 
   alertFormValues(formGroup: FormGroup) {
