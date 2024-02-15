@@ -1,0 +1,47 @@
+<form [formGroup]="deviceForm" (ngSubmit)="onSubmit()">
+  <h2 mat-dialog-title>
+    {{ title }}
+    <span *ngIf="id">
+      <br />
+      Id: {{ id }}
+    </span>
+  </h2>
+  <mat-dialog-content class="mat-typography">
+    <div class="row">
+      <div class="col-lg-4">
+        <mat-form-field>
+          <mat-label>Nom</mat-label>
+          <input matInput formControlName="name" placeholder="Enter le nom" />
+        </mat-form-field>
+      </div>
+
+      <div class="col-lg-4">
+        <mat-form-field>
+          <mat-label>Adresse du serveur</mat-label>
+          <input
+            pattern="^(034|032|033|038)\d{7}$"
+            matInput
+            formControlName="serverAddress"
+            placeholder="Enter Adresse serveur"
+          />
+        </mat-form-field>
+      </div>
+
+      <div class="col-lg-4">
+        <mat-form-field>
+          <mat-label>Seuil courant pour notification</mat-label>
+          <input
+            matInput
+            formControlName="seuil"
+            type="number"
+            placeholder="Enter seuil"
+          />
+        </mat-form-field>
+      </div>
+    </div>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-button mat-dialog-close>Annuler</button>
+    <button mat-button type="submit" cdkFocusInitial>Sauvegarder</button>
+  </mat-dialog-actions>
+</form>
