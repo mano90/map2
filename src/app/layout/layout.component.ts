@@ -1,4 +1,6 @@
 import {
+  AfterContentChecked,
+  AfterContentInit,
   AfterViewInit,
   Component,
   ElementRef,
@@ -33,9 +35,8 @@ import Point from 'ol/geom/Point';
 import LineString from 'ol/geom/LineString';
 import { getDistance } from 'ol/sphere';
 import { Time } from '@angular/common';
-import { Geometry } from 'ol/geom';
-import { defaults as defaultInteractions } from 'ol/interaction';
-import { toStringHDMS } from 'ol/coordinate.js';
+import { Geometry, Polygon } from 'ol/geom';
+import { Draw, defaults as defaultInteractions } from 'ol/interaction';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { NgxSpinnerService } from 'ngx-spinner';
 import { Locate } from '../classes/Locate';
@@ -43,6 +44,8 @@ import { CoordinateFormatterService } from '../services/coordinate-formatter.ser
 import { RtaService } from '../components/rta/rta.service';
 import { ApicallService } from '../services/requests/apicall.service';
 import { BehaviorSubject } from 'rxjs';
+import { createBox } from 'ol/interaction/Draw';
+import { NotificationService } from '../services/notification/notification.service';
 
 const DATES: string[] = ['2022-02-02', '2022-02-03'];
 const IMEIS: string[] = ['751345975112', '891144473251'];
@@ -52,8 +55,10 @@ const IMEIS: string[] = ['751345975112', '891144473251'];
   templateUrl: './layout.component.html',
   styleUrls: ['./layout.component.scss'],
 })
-export class LayoutComponent implements OnInit, AfterViewInit {
+export class LayoutComponent implements OnInit {
   @ViewChild('content') content: ElementRef;
+  currentCoordinates: number[];
+  drawId: number;
   map: Map;
   showData = new BehaviorSubject<{ data: Locate[]; showSegment: boolean }>({
     data: [],
@@ -80,18 +85,17 @@ export class LayoutComponent implements OnInit, AfterViewInit {
   timeEnd: Time;
   overlay: Overlay;
   contentPopup: HTMLElement | null = null;
-
+  lastDraw: Feature<Geometry>;
+  currentDraw: Feature<Polygon>;
+  draw: Draw;
   constructor(
     private coordinateFormatterService: CoordinateFormatterService,
     private _rta: RtaService,
     public modal: NgbModal,
     private spinner: NgxSpinnerService,
-    private service: ApicallService
+    private service: ApicallService,
+    private notificationService: NotificationService
   ) {}
-
-  ngAfterViewInit(): void {
-    this.map.on('click', (event) => {});
-  }
 
   ngOnInit(): void {
     this.contentPopup = document.getElementById('popup-content');
@@ -129,13 +133,42 @@ export class LayoutComponent implements OnInit, AfterViewInit {
       }),
       layers: [
         this.tileLayer,
-        // this.hereLayer,
+        this.hereLayer,
         new VectorLayer({
           source: this.vectorSource,
         }),
       ],
       overlays: [this.overlay],
     });
+
+    this.draw = new Draw({
+      source: this.vectorSource,
+      type: 'Circle',
+      geometryFunction: createBox(),
+    });
+
+    this.draw.on('drawstart', () => {
+      this.vectorSource.removeFeature(this.lastDraw);
+      this.lastDraw = null;
+    });
+
+    this.draw.on('drawend', (event) => {
+      const drawnFeature = event.feature;
+      drawnFeature.setStyle(
+        new Style({
+          fill: new Fill({
+            color: 'rgba(0, 0, 255, 0.9)',
+          }),
+          zIndex: 999,
+        })
+      );
+      const drawnGeometry = drawnFeature.getGeometry() as Polygon;
+      const properties = drawnGeometry.getFlatCoordinates();
+      this.lastDraw = drawnFeature;
+      this.currentCoordinates = properties;
+      this.map.removeInteraction(this.draw);
+    });
+
     this.showData.subscribe((res) => {
       this.spinner.show();
       this.pasteData(res.data, res.showSegment);
@@ -146,7 +179,12 @@ export class LayoutComponent implements OnInit, AfterViewInit {
             return feature;
           }
         );
-        if (feature) {
+
+        if (
+          feature &&
+          feature.getGeometry().getType() == 'Point' &&
+          feature.getProperties()['id']
+        ) {
           this.contentPopup!.innerHTML = '';
           const id = feature.getProperties()['id'];
           this.generatePopupContent(id).map((item) =>
@@ -155,7 +193,17 @@ export class LayoutComponent implements OnInit, AfterViewInit {
           const coordinate = event.coordinate;
           this.overlay.setPosition(coordinate);
         } else {
-          this.overlay.setPosition(undefined);
+          if (
+            feature &&
+            feature.getGeometry().getType() == 'Polygon' &&
+            feature.getProperties()['id']
+          ) {
+            this.contentPopup!.innerHTML = '';
+            const id = feature.getProperties()['id'];
+            this.contentPopup!.append(this.generateSquareContent(id));
+            const coordinate = event.coordinate;
+            this.overlay.setPosition(coordinate);
+          } else this.overlay.setPosition(undefined);
         }
       });
       this.spinner.hide();
@@ -170,6 +218,18 @@ export class LayoutComponent implements OnInit, AfterViewInit {
     this.service.getOneById(id).subscribe((res) => {
       this.previousData = this.showData.getValue();
       this.showData.next({ data: res, showSegment: true });
+    });
+  }
+
+  getDelimitations(id: number) {
+    this.service.getDeviceById(id).subscribe((res) => {
+      const data: number[][] = [];
+      data.push(res.limiteHG.split(',').map((e) => +e));
+      data.push(res.limiteHD.split(',').map((e) => +e));
+      data.push(res.limiteBD.split(',').map((e) => +e));
+      data.push(res.limiteBG.split(',').map((e) => +e));
+      data.push(res.limiteHG.split(',').map((e) => +e));
+      this.formatCoordinates(data, id);
     });
   }
 
@@ -220,7 +280,17 @@ export class LayoutComponent implements OnInit, AfterViewInit {
   //       this.pasteData();
   //     });
   //   });
+  generateSquareContent(id: string): HTMLElement {
+    const deplacement = this.formatButton(document.createElement('button'));
+    deplacement.innerHTML = 'Changer';
+    deplacement.addEventListener('click', () => {
+      this.map.addInteraction(this.draw);
+      this.drawId = +id;
 
+      this.overlay.setPosition(undefined);
+    });
+    return deplacement;
+  }
   generatePopupContent(id: string): HTMLElement[] {
     const deplacement = this.formatButton(document.createElement('button'));
     deplacement.innerHTML = 'Historique';
@@ -235,9 +305,9 @@ export class LayoutComponent implements OnInit, AfterViewInit {
       this.overlay.setPosition(undefined);
     });
     const settings = this.formatButton(document.createElement('button'));
-    settings.innerHTML = 'Paramètres';
+    settings.innerHTML = 'Délimitations';
     settings.addEventListener('click', () => {
-      this.getSettings(id);
+      this.getDelimitations(+id);
       this.overlay.setPosition(undefined);
     });
     const deplacementContainer = document.createElement('div');
@@ -310,9 +380,6 @@ export class LayoutComponent implements OnInit, AfterViewInit {
   getMaintenances(id: string) {
     console.log('get maintenances', id);
   }
-  getSettings(id: string) {
-    console.log('get settings', id);
-  }
 
   closePopup() {
     this.overlay.setPosition(undefined);
@@ -363,11 +430,9 @@ export class LayoutComponent implements OnInit, AfterViewInit {
   }
 
   changeDate(event: any) {
-    // Filter date
     this.selectedDate = event.target.value;
   }
   changeTelephone(event: any) {
-    // Filter Id
     this.selectedId = event.target.value;
   }
 
@@ -385,7 +450,7 @@ export class LayoutComponent implements OnInit, AfterViewInit {
             anchor: [0.5, 46],
             anchorXUnits: 'fraction',
             anchorYUnits: 'pixels',
-            src: 'assets/locationIcons/2.png',
+            src: `http://localhost:3000/images/${feature.device.icon}`,
             scale: [0.09, 0.09],
             opacity: 1,
           }),
@@ -572,6 +637,72 @@ export class LayoutComponent implements OnInit, AfterViewInit {
     this.activeDetails = false;
     this.endFeature = [];
     this.showData.next(this.previousData);
+  }
+
+  switchOpenLayers() {
+    this.tileLayer.setVisible(true);
+    this.hereLayer.setVisible(false);
+  }
+
+  switchHereLayer() {
+    this.tileLayer.setVisible(false);
+    this.hereLayer.setVisible(true);
+  }
+  formatCoordinates(data: number[][], id: number) {
+    const square = new Feature({
+      geometry: new Polygon([data]),
+    });
+    square.set('id', id);
+    square.setStyle(
+      new Style({
+        fill: new Fill({
+          color: 'rgba(0, 0, 255, 0.9)',
+        }),
+        zIndex: 999,
+      })
+    );
+    this.currentDraw = square;
+
+    this.mapFunction([square]);
+  }
+
+  private formatToCoordinate(data: number[]) {
+    return {
+      limiteHG: data[0] + ',' + data[1],
+      limiteHD: data[2] + ',' + data[3],
+      limiteBD: data[4] + ',' + data[5],
+      limiteBG: data[6] + ',' + data[7],
+    };
+  }
+  saveCoordinates() {
+    this.vectorSource.removeFeature(this.currentDraw);
+    this.vectorSource.removeFeature(this.lastDraw);
+    this.lastDraw = null;
+    this.map.removeInteraction(this.draw);
+    const formatedCoordinates = this.formatToCoordinate(
+      this.currentCoordinates
+    );
+    const id = this.drawId;
+    this.service
+      .updateCoordinates(
+        id,
+        formatedCoordinates.limiteHG,
+        formatedCoordinates.limiteHD,
+        formatedCoordinates.limiteBD,
+        formatedCoordinates.limiteBG
+      )
+      .subscribe(() => {
+        this.notificationService.autoClose('success', 'Modification effectuée');
+      });
+    this.drawId = null;
+  }
+
+  cancelCoordinates() {
+    this.vectorSource.removeFeature(this.currentDraw);
+    this.vectorSource.removeFeature(this.lastDraw);
+    this.lastDraw = null;
+    this.map.removeInteraction(this.draw);
+    this.drawId = null;
   }
 
   @HostListener('wheel', ['$event'])
