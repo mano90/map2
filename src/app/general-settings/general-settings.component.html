@@ -1,69 +1,253 @@
+<header>
+  <div class="title">
+    <img class="headerImage" src="assets/logo.png" alt="" />
+    Tracking devices
+    <button
+      class="btn btn-outline btn-header"
+      [routerLink]="['/']"
+      mat-menu-item
+    >
+      ACCUEIL
+    </button>
+    <button
+      class="btn btn-outline btn-header params"
+      mat-button
+      [matMenuTriggerFor]="belowMenu"
+    >
+      Manorintsoa
+      <mat-icon>keyboard_arrow_down</mat-icon>
+    </button>
+    <mat-menu #belowMenu="matMenu" yPosition="below">
+      <button
+        [routerLink]="['/parametres']"
+        routerLinkActive="router-link-active"
+        mat-menu-item
+      >
+        Parametres
+      </button>
+      <button mat-menu-item>Deconnexion</button>
+    </mat-menu>
+  </div>
+</header>
+<br />
 <div class="container">
   <h1>Paramètres générales</h1>
-
-  <p>Configurations</p>
-
-  <form
-    class="example-form"
-    [formGroup]="formGroup"
-    (ngSubmit)="alertFormValues(formGroup)"
-    ngNativeValidate
-  >
-    <div class="row">
-      <div class="col-lg-12">
-        <p>Matériels à afficher</p>
-      </div>
-
-      <div class="col-lg-4">
-        <mat-slide-toggle color="primary" formControlName="online">
-          En ligne
-        </mat-slide-toggle>
-      </div>
-      <div class="col-lg-4">
-        <mat-slide-toggle color="primary" formControlName="offline">
-          Hors ligne
-        </mat-slide-toggle>
-      </div>
-      <div class="col-lg-4">
-        <mat-slide-toggle color="primary" formControlName="maintenance">
-          En maintenance
-        </mat-slide-toggle>
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-lg-12">
-        <p>Date</p>
-      </div>
-      <mat-form-field class="col-lg-6">
-        <mat-label>Debut</mat-label>
-        <input
-          matInput
-          [matDatepicker]="dateDebut"
-          formControlName="dateDebut"
-        />
-        <mat-hint>DD-MM-YYYY</mat-hint>
-        <mat-datepicker-toggle
-          matIconSuffix
-          [for]="dateDebut"
-        ></mat-datepicker-toggle>
-        <mat-datepicker #dateDebut></mat-datepicker>
-      </mat-form-field>
-      <mat-form-field class="col-lg-6">
-        <mat-label>Fin</mat-label>
-        <input matInput [matDatepicker]="dp" formControlName="dateFin" />
-        <mat-hint>DD-MM-YYYY</mat-hint>
-        <mat-datepicker-toggle matIconSuffix [for]="dp"></mat-datepicker-toggle>
-        <mat-datepicker #dp></mat-datepicker>
-      </mat-form-field>
-      <div class="row">
-        <div class="col-lg-12">
-          <mat-error *ngIf="formGroup.invalid"> Invalid date </mat-error>
+  <br />
+  <mat-card class="custom-card">
+    <mat-card-header>
+      <mat-card-title class="card-header">
+        Matériels à afficher
+        <hr />
+      </mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form
+        class="example-form"
+        [formGroup]="formGroup"
+        (ngSubmit)="alertFormValues(formGroup)"
+        ngNativeValidate
+      >
+        <div class="row">
+          <div class="col-lg-4">
+            <mat-slide-toggle color="primary" formControlName="online">
+              En ligne
+            </mat-slide-toggle>
+          </div>
+          <div class="col-lg-4">
+            <mat-slide-toggle color="primary" formControlName="offline">
+              Hors ligne
+            </mat-slide-toggle>
+          </div>
+          <div class="col-lg-4">
+            <mat-slide-toggle color="primary" formControlName="maintenance">
+              En maintenance
+            </mat-slide-toggle>
+          </div>
         </div>
-      </div>
-    </div>
-    <br /><br />
-    <button [disabled]="formGroup.invalid" mat-raised-button type="submit">
-      Enregistrer
-    </button>
-  </form>
+        <div class="row">
+          <div class="col-lg-12">
+            <p>Date</p>
+          </div>
+          <mat-form-field class="col-lg-6">
+            <mat-label>Debut</mat-label>
+            <input
+              matInput
+              [matDatepicker]="dateDebut"
+              formControlName="dateDebut"
+            />
+            <mat-hint>DD-MM-YYYY</mat-hint>
+            <mat-datepicker-toggle
+              matIconSuffix
+              [for]="dateDebut"
+            ></mat-datepicker-toggle>
+            <mat-datepicker #dateDebut></mat-datepicker>
+          </mat-form-field>
+          <mat-form-field class="col-lg-6">
+            <mat-label>Fin</mat-label>
+            <input matInput [matDatepicker]="dp" formControlName="dateFin" />
+            <mat-hint>DD-MM-YYYY</mat-hint>
+            <mat-datepicker-toggle
+              matIconSuffix
+              [for]="dp"
+            ></mat-datepicker-toggle>
+            <mat-datepicker #dp></mat-datepicker>
+          </mat-form-field>
+          <div class="row">
+            <div class="col-lg-12">
+              <mat-error *ngIf="formGroup.invalid"> Invalid date </mat-error>
+            </div>
+          </div>
+        </div>
+        <br /><br />
+        <button [disabled]="formGroup.invalid" mat-raised-button type="submit">
+          Enregistrer
+        </button>
+      </form>
+    </mat-card-content>
+  </mat-card>
 </div>
+<br /><br />
+<div class="container">
+  <h2>Matériels</h2>
+  <br />
+  <button
+    [disabled]="isSimpleAdd"
+    mat-raised-button
+    (click)="simpleSelection()"
+  >
+    Simple selection
+  </button>
+  <button
+    [disabled]="!isSimpleAdd"
+    mat-raised-button
+    (click)="multipleSelection()"
+  >
+    Selection Multiple
+  </button>
+
+  <mat-form-field>
+    <mat-label>Filter</mat-label>
+    <input
+      matInput
+      (keyup)="applyFilter($event)"
+      placeholder="Ex. Mia"
+      #input
+    />
+  </mat-form-field>
+  <div class="mat-elevation-z8">
+    <table mat-table [dataSource]="dataSource" class="demo-table" matSort>
+      <ng-container
+        [matColumnDef]="column"
+        *ngFor="let column of displayedColumns"
+      >
+        <ng-container *ngIf="column !== 'checkbox'; else checkboxTemplate">
+          <ng-container *ngIf="column !== 'action'; else actionTemplate">
+            <ng-container *ngIf="column !== 'icon'; else imageTemplate">
+              <th
+                mat-header-cell
+                *matHeaderCellDef
+                mat-sort-header
+                class="header"
+              >
+                {{ column }}
+              </th>
+              <td mat-cell *matCellDef="let element">{{ element[column] }}</td>
+            </ng-container>
+          </ng-container>
+        </ng-container>
+        <ng-template #checkboxTemplate>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="header">
+            {{ column }}
+          </th>
+          <td mat-cell *matCellDef="let element">
+            <input type="checkbox" [checked]="clickedRows.has(element.id)" />
+          </td>
+        </ng-template>
+        <ng-template #imageTemplate>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="header">
+            {{ column }}
+          </th>
+          <td mat-cell *matCellDef="let element">
+            <input
+              class="image-form"
+              type="image"
+              [src]="'http://localhost:3000/images/' + element[column]"
+              alt=""
+            />
+          </td>
+        </ng-template>
+        <ng-template #actionTemplate>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="header">
+            {{ column }}
+          </th>
+          <td mat-cell *matCellDef="let element">
+            <button
+              (click)="editDevice(element)"
+              matTooltip="Modifier"
+              class="btn updateData"
+            >
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button
+              (click)="changeIcon(element.id)"
+              matTooltip="Changer icon"
+              class="btn updateData1"
+            >
+              <mat-icon>description</mat-icon>
+            </button>
+            <!-- <button
+              (click)="updatePosition(element.id)"
+              matTooltip="Mettre à jour les limites"
+              class="btn updateDataOutline"
+            >
+              <mat-icon>location_on</mat-icon>
+            </button> -->
+            <button matTooltip="Supprimer" class="btn btn-danger">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </td>
+        </ng-template>
+      </ng-container>
+      <tr mat-header-row *matHeaderRowDef="columnsToDisplay"></tr>
+      <tr
+        mat-row
+        (click)="addRow(row.id)"
+        [class.demo-row-is-clicked]="clickedRows.has(row.id) && !isSimpleAdd"
+        *matRowDef="let row; columns: columnsToDisplay"
+      ></tr>
+
+      <tr class="mat-row" *matNoDataRow>
+        <td class="mat-cell" colspan="4">
+          No data matching the filter "{{ input.value }}"
+        </td>
+      </tr>
+    </table>
+    <mat-paginator
+      [pageSizeOptions]="[5, 10, 25, 100]"
+      aria-label="Select page of users"
+    ></mat-paginator>
+  </div>
+</div>
+<br /><br /><br />
+<button
+  *ngIf="!isSimpleAdd && clickedRows.size > 0"
+  class="custom-btn"
+  mat-button
+  [matMenuTriggerFor]="menu"
+>
+  <mat-icon>more_vert</mat-icon>
+</button>
+<mat-menu #menu="matMenu" yPosition="below" xPosition="before">
+  <button mat-menu-item>
+    <mat-icon>dialpad</mat-icon>
+    <span>Check status</span>
+  </button>
+  <button mat-menu-item>
+    <mat-icon>flash_on</mat-icon>
+    <span>Changer le seuil</span>
+  </button>
+  <button mat-menu-item>
+    <mat-icon>delete</mat-icon>
+    <span>Supprimer</span>
+  </button>
+</mat-menu>

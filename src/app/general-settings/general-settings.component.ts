@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import {
   AbstractControl,
   FormBuilder,
@@ -15,17 +15,12 @@ import {
   MAT_DATE_LOCALE,
 } from '@angular/material/core';
 
-// Depending on whether rollup is used, moment needs to be imported differently.
-// Since Moment.js doesn't have a default export, we normally need to import using the `* as`
-// syntax. However, rollup creates a synthetic default module and we thus need to import it using
-// the `default as` syntax.
 import * as _moment from 'moment';
-// tslint:disable-next-line:no-duplicate-imports
 import { default as _rollupMoment } from 'moment';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
-
+import Swal from 'sweetalert2';
 const moment = _rollupMoment || _moment;
 
 export const MY_FORMATS = {
@@ -39,6 +34,11 @@ export const MY_FORMATS = {
     monthYearA11yLabel: 'MM YYYY',
   },
 };
+import { MatTableDataSource } from '@angular/material/table';
+
+import { MatSort, MatSortModule } from '@angular/material/sort';
+import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
+import { MatTableModule } from '@angular/material/table';
 
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatButtonModule } from '@angular/material/button';
@@ -48,6 +48,16 @@ import {
   _MatSlideToggleRequiredValidatorModule,
 } from '@angular/material/slide-toggle';
 import { CommonModule } from '@angular/common';
+import { MatMenuModule } from '@angular/material/menu';
+import { Router, RouterModule } from '@angular/router';
+import { MatIconModule } from '@angular/material/icon';
+import { MatCardModule } from '@angular/material/card';
+import { HttpClientModule } from '@angular/common/http';
+import { ApicallService } from '../services/requests/apicall.service';
+import { Device } from '../classes/Device';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { EditDeviceComponent } from '../modals/edit-device/edit-device.component';
+import { NotificationService } from '../services/notification/notification.service';
 
 @Component({
   selector: 'app-general-settings',
@@ -66,6 +76,15 @@ import { CommonModule } from '@angular/common';
     MatButtonModule,
     MatFormFieldModule,
     MatTooltipModule,
+    MatTableModule,
+    MatMenuModule,
+    RouterModule,
+    MatIconModule,
+    MatCardModule,
+    HttpClientModule,
+    MatPaginatorModule,
+    MatSortModule,
+    MatDialogModule,
   ],
   providers: [
     {
@@ -77,25 +96,53 @@ import { CommonModule } from '@angular/common';
   ],
 })
 export class GeneralSettingsComponent implements OnInit {
+  @ViewChild(MatPaginator) paginator: MatPaginator;
+  @ViewChild(MatSort) sort: MatSort;
   displayedColumns: string[] = [
-    'select',
+    'checkbox',
+    'id',
+    'icon',
     'name',
     'serverAddress',
-    'status',
     'seuil',
-    'limiteHG',
-    'limiteHD',
-    'limiteBD',
-    'limiteBD',
+    'status',
+    'action',
   ];
-  // dataSource = new MatTableDataSource<any>([yourDataArray]);
-  constructor(private _formBuilder: FormBuilder) {}
+  isSimpleAdd: boolean = false;
+  columnsToDisplay: string[] = [
+    'checkbox',
+    'id',
+    'icon',
+    'name',
+    'serverAddress',
+    'seuil',
+    'status',
+  ];
+  dataSource: MatTableDataSource<Device>;
+  clickedRows = new Set<number>();
+  constructor(
+    private _formBuilder: FormBuilder,
+    private service: ApicallService,
+    private notificationService: NotificationService,
+    private route: Router,
+    public dialog: MatDialog
+  ) {}
 
   alertFormValues(formGroup: FormGroup) {
     alert(JSON.stringify(formGroup.value, null, 2));
   }
+
+  applyFilter(event: Event) {
+    const filterValue = (event.target as HTMLInputElement).value;
+    this.dataSource.filter = filterValue.trim().toLowerCase();
+
+    if (this.dataSource.paginator) {
+      this.dataSource.paginator.firstPage();
+    }
+  }
   ngOnInit(): void {
     this.formGroup.disable();
+    this.getAllDevice();
   }
   formGroup = this._formBuilder.group(
     {
@@ -116,5 +163,67 @@ export class GeneralSettingsComponent implements OnInit {
       return { dateDebutAfterDateFin: true };
     }
     return null;
+  }
+
+  addRow(id: number) {
+    if (!this.isSimpleAdd) {
+      if (this.clickedRows.has(id)) {
+        this.clickedRows.delete(id);
+      } else this.clickedRows.add(id);
+    }
+  }
+
+  getAllDevice() {
+    this.service.getAllRawDevice().subscribe((res) => {
+      console.log(res);
+      this.dataSource = new MatTableDataSource(res);
+      this.dataSource.paginator = this.paginator;
+      this.dataSource.sort = this.sort;
+    });
+  }
+
+  simpleSelection() {
+    this.isSimpleAdd = !this.isSimpleAdd;
+    this.columnsToDisplay.shift();
+    this.columnsToDisplay.push(
+      this.displayedColumns[this.displayedColumns.length - 1]
+    );
+    this.clickedRows.clear();
+  }
+
+  multipleSelection() {
+    this.isSimpleAdd = !this.isSimpleAdd;
+    this.columnsToDisplay.pop();
+    this.columnsToDisplay.unshift(this.displayedColumns[0]);
+  }
+  editDevice(device: Device) {
+    const dialogRef = this.dialog.open(EditDeviceComponent, {
+      data: { device, edit: true },
+    });
+    dialogRef.afterClosed().subscribe((result) => {
+      // console.log(`Dialog result: ${result}`);
+      if (result === 'success') {
+        this.getAllDevice();
+      }
+    });
+  }
+
+  async changeIcon(deviceId: number) {
+    const { value: file } = await Swal.fire({
+      title: "Changer l'icone",
+      input: 'file',
+      inputAttributes: {
+        accept: 'image/*',
+      },
+    });
+
+    if (file) {
+      const formData = new FormData();
+      formData.append('image', file);
+      this.service.changeIcon(deviceId, formData).subscribe(() => {
+        this.getAllDevice();
+        this.notificationService.autoClose('success', 'Modifié');
+      });
+    }
   }
 }
