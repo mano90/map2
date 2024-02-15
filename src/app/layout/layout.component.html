@@ -8,6 +8,16 @@
     <button *ngIf="activeDetails" class="btn btn-outline btn-header">
       DETAILS
     </button>
+
+    <button *ngIf="drawId && lastDraw" (click)="saveCoordinates()">
+      Modifier
+    </button>
+    <button *ngIf="drawId && lastDraw" (click)="cancelCoordinates()">
+      Annuler
+    </button>
+
+    <button (click)="switchOpenLayers()">OpenLayers</button>
+    <button (click)="switchHereLayer()">HereTile</button>
     <button
       class="btn btn-outline btn-header params"
       mat-button
@@ -32,6 +42,7 @@
 <main>
   <div class="left-bar">
     <h2>Liste des appareils</h2>
+    <button class="map-control">N</button>
     <div class="row">
       <div class="col-md-1"></div>
       <div class="col-md-10">
