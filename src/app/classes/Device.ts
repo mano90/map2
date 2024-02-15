@@ -3,13 +3,14 @@ import { Locate } from './Locate';
 
 export class Device {
   name: string;
-  id: number;
+  icon?: string;
+  id?: number;
   serverAddress: string;
-  status: DeviceStatus;
+  status?: DeviceStatus;
   devicePositions?: Locate[];
   seuil: number;
-  limiteHG: string;
-  limiteHD: string;
-  limiteBD: string;
-  limiteBG: string;
+  limiteHG?: string;
+  limiteHD?: string;
+  limiteBD?: string;
+  limiteBG?: string;
 }
