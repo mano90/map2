@@ -8,10 +8,6 @@
   height: 50px;
   margin-right: 10px;
 }
-header {
-  background-color: var(--header-color);
-  // padding: 2em;
-}
 .btn-header {
   background-color: transparent;
   color: #efefef;
@@ -71,4 +67,9 @@ footer {
   color: black;
   font-size: 20px;
   cursor: pointer;
+}
+.map-control {
+  position: fixed;
+  right: 5px;
+  z-index: 999;
 }
