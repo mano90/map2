@@ -195,13 +195,9 @@
             >
               <mat-icon>description</mat-icon>
             </button>
-            <!-- <button
-              (click)="updatePosition(element.id)"
-              matTooltip="Mettre à jour les limites"
-              class="btn updateDataOutline"
-            >
-              <mat-icon>location_on</mat-icon>
-            </button> -->
+            <button matTooltip="Check status" class="btn updateData2">
+              <mat-icon>dialpad</mat-icon>
+            </button>
             <button matTooltip="Supprimer" class="btn btn-danger">
               <mat-icon>delete</mat-icon>
             </button>
@@ -242,7 +238,7 @@
     <mat-icon>dialpad</mat-icon>
     <span>Check status</span>
   </button>
-  <button mat-menu-item>
+  <button (click)="changeStatusMultiple()" mat-menu-item>
     <mat-icon>flash_on</mat-icon>
     <span>Changer le seuil</span>
   </button>
