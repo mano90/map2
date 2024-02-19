@@ -1,7 +1,4 @@
 import {
-  AfterContentChecked,
-  AfterContentInit,
-  AfterViewInit,
   Component,
   ElementRef,
   HostListener,
@@ -18,9 +15,9 @@ import Overlay from 'ol/Overlay';
 import { unByKey } from 'ol/Observable';
 import { getVectorContext } from 'ol/render';
 import Polyline from 'ol/format/Polyline';
-import Feature from 'ol/Feature';
-import { fromLonLat, toLonLat } from 'ol/proj.js';
-import { Vector as VectorLayer } from 'ol/layer';
+import Feature, { FeatureLike } from 'ol/Feature';
+import { fromLonLat, transform } from 'ol/proj.js';
+import { Tile, Vector as VectorLayer } from 'ol/layer';
 import {
   Circle as CircleStyle,
   Fill,
@@ -30,7 +27,6 @@ import {
   Text,
 } from 'ol/style';
 import { easeOut } from 'ol/easing';
-import XYZ from 'ol/source/XYZ';
 import Point from 'ol/geom/Point';
 import LineString from 'ol/geom/LineString';
 import { getDistance } from 'ol/sphere';
@@ -46,6 +42,8 @@ import { ApicallService } from '../services/requests/apicall.service';
 import { BehaviorSubject } from 'rxjs';
 import { createBox } from 'ol/interaction/Draw';
 import { NotificationService } from '../services/notification/notification.service';
+import { BackgroundMapService } from '../services/map/background-map.service';
+import { Coordinate } from 'ol/coordinate';
 
 const DATES: string[] = ['2022-02-02', '2022-02-03'];
 const IMEIS: string[] = ['751345975112', '891144473251'];
@@ -56,6 +54,15 @@ const IMEIS: string[] = ['751345975112', '891144473251'];
   styleUrls: ['./layout.component.scss'],
 })
 export class LayoutComponent implements OnInit {
+  message: string;
+
+  receiveMessage($event: any) {
+    // this.getAllData();
+    this.vectorSource.clear();
+    // console.log($event);
+    // this.message = $event;
+  }
+  userLocation: [number, number];
   @ViewChild('content') content: ElementRef;
   currentCoordinates: number[];
   drawId: number;
@@ -74,8 +81,6 @@ export class LayoutComponent implements OnInit {
   selectedId: string = 'All';
 
   duration: number = 3000;
-  tileLayer: TileLayer<any>;
-  hereLayer: TileLayer<any>;
   scroll = false;
   timeout: any;
   endFeature: Feature[] = [];
@@ -88,16 +93,21 @@ export class LayoutComponent implements OnInit {
   lastDraw: Feature<Geometry>;
   currentDraw: Feature<Polygon>;
   draw: Draw;
+  backgroundLayers: any[];
+
   constructor(
     private coordinateFormatterService: CoordinateFormatterService,
     private _rta: RtaService,
     public modal: NgbModal,
     private spinner: NgxSpinnerService,
     private service: ApicallService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private backgroundMapService: BackgroundMapService
   ) {}
 
   ngOnInit(): void {
+    this.backgroundLayers = this.backgroundMapService.getBackgroundLayers();
+
     this.contentPopup = document.getElementById('popup-content');
     // this.spinner.show();
 
@@ -106,40 +116,29 @@ export class LayoutComponent implements OnInit {
       element: container!,
       autoPan: true,
     });
-
-    const attributions =
-      '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> ' +
-      '<a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap contributors</a>';
-    this.tileLayer = new TileLayer({
-      source: new XYZ({
-        attributions: attributions,
-        url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-        tileSize: 512,
-      }),
-    });
-    this.hereLayer = new TileLayer({
-      source: new XYZ({
-        attributions: '@ Here 2023',
-        url: 'https://2.base.maps.ls.hereapi.com/maptile/2.1/maptile/newest/normal.day/{z}/{x}/{y}/256/png?apiKey=slxATAloyROzSmRPPepO0Hx1dNOrxwSlo2UCCdBXgvY',
+    this.vectorLayer = new VectorLayer({
+      source: this.vectorSource,
+      style: new Style({
+        stroke: new Stroke({
+          width: 4,
+          color: 'red',
+        }),
       }),
     });
     this.map = new Map({
       view: new View({
-        center: fromLonLat([48.93255, -19.1555]),
+        projection: 'EPSG:3857',
+        center: [5447146.549216399, -2173252.1023832164],
         zoom: 6,
       }),
       interactions: defaultInteractions({
         doubleClickZoom: false,
       }),
-      layers: [
-        this.tileLayer,
-        this.hereLayer,
-        new VectorLayer({
-          source: this.vectorSource,
-        }),
-      ],
+      layers: [this.backgroundLayers[0].layer],
       overlays: [this.overlay],
     });
+
+    this.map.addLayer(this.vectorLayer);
 
     this.draw = new Draw({
       source: this.vectorSource,
@@ -169,6 +168,7 @@ export class LayoutComponent implements OnInit {
       this.map.removeInteraction(this.draw);
     });
 
+    this.getAllData();
     this.showData.subscribe((res) => {
       this.spinner.show();
       this.pasteData(res.data, res.showSegment);
@@ -187,7 +187,7 @@ export class LayoutComponent implements OnInit {
         ) {
           this.contentPopup!.innerHTML = '';
           const id = feature.getProperties()['id'];
-          this.generatePopupContent(id).map((item) =>
+          this.generatePopupContent(id, feature).map((item) =>
             this.contentPopup!.append(item)
           );
           const coordinate = event.coordinate;
@@ -208,12 +208,17 @@ export class LayoutComponent implements OnInit {
       });
       this.spinner.hide();
     });
+  }
+
+  getAllData() {
     this.service.getAllDevices().subscribe((res) => {
       this.previousData = this.showData.getValue();
       this.showData.next({ data: res, showSegment: false });
     });
   }
-
+  updateBackgroundLayer(newLayer: any) {
+    this.map.getLayers().setAt(0, newLayer.layer);
+  }
   getSpecifiedData(id: number) {
     this.service.getOneById(id).subscribe((res) => {
       this.previousData = this.showData.getValue();
@@ -222,39 +227,15 @@ export class LayoutComponent implements OnInit {
   }
 
   getDelimitations(id: number) {
+    this.removeSquares();
     this.service.getDeviceById(id).subscribe((res) => {
       const data: number[][] = [];
-      data.push(res.limiteHG.split(',').map((e) => +e));
-      data.push(res.limiteHD.split(',').map((e) => +e));
-      data.push(res.limiteBD.split(',').map((e) => +e));
-      data.push(res.limiteBG.split(',').map((e) => +e));
-      data.push(res.limiteHG.split(',').map((e) => +e));
+      data.push(fromLonLat(res.limiteHG.split(',').map((e) => +e)));
+      data.push(fromLonLat(res.limiteHD.split(',').map((e) => +e)));
+      data.push(fromLonLat(res.limiteBD.split(',').map((e) => +e)));
+      data.push(fromLonLat(res.limiteBG.split(',').map((e) => +e)));
+      data.push(fromLonLat(res.limiteHG.split(',').map((e) => +e)));
       this.formatCoordinates(data, id);
-    });
-  }
-
-  getAllData() {
-    this.service.getAllDevices().subscribe((res) => {
-      this.pasteData(res);
-      this.map.on('click', (event) => {
-        const feature = this.map.forEachFeatureAtPixel(
-          event.pixel,
-          function (feature) {
-            return feature;
-          }
-        );
-        if (feature) {
-          this.contentPopup!.innerHTML = '';
-          const id = feature.getProperties()['id'];
-          this.generatePopupContent(id).map((item) =>
-            this.contentPopup!.append(item)
-          );
-          const coordinate = event.coordinate;
-          this.overlay.setPosition(coordinate);
-        } else {
-          this.overlay.setPosition(undefined);
-        }
-      });
     });
   }
 
@@ -291,7 +272,7 @@ export class LayoutComponent implements OnInit {
     });
     return deplacement;
   }
-  generatePopupContent(id: string): HTMLElement[] {
+  generatePopupContent(id: string, feature: FeatureLike): HTMLElement[] {
     const deplacement = this.formatButton(document.createElement('button'));
     deplacement.innerHTML = 'Historique';
     deplacement.addEventListener('click', () => {
@@ -299,9 +280,13 @@ export class LayoutComponent implements OnInit {
       this.overlay.setPosition(undefined);
     });
     const maintenance = this.formatButton(document.createElement('button'));
-    maintenance.innerHTML = 'Maintenance';
+    maintenance.innerHTML = 'Trajet';
     maintenance.addEventListener('click', () => {
-      this.getMaintenances(id);
+      if (!this.currentCoordinates)
+        this.getLocation().then(() => {
+          this.getTraject(id, feature);
+        });
+      else this.getTraject(id, feature);
       this.overlay.setPosition(undefined);
     });
     const settings = this.formatButton(document.createElement('button'));
@@ -377,8 +362,58 @@ export class LayoutComponent implements OnInit {
     this.activeDetails = true;
     this.getSpecifiedData(+id);
   }
-  getMaintenances(id: string) {
-    console.log('get maintenances', id);
+  getTraject(id: string, feature: FeatureLike) {
+    this.vectorSource.forEachFeature((feature) => {
+      if (feature.getGeometry().getType() === 'LineString') {
+        this.vectorSource.removeFeature(feature);
+      }
+    });
+    const data = feature.getGeometry() as Point;
+    const coordinates = data.getFlatCoordinates();
+    const formatedCoordinates: [number, number] = [
+      coordinates[0],
+      coordinates[1],
+    ];
+    const f1: Coordinate = transform(
+      this.userLocation,
+      'EPSG:3857',
+      'EPSG:4326'
+    );
+    const f2: Coordinate = transform(
+      formatedCoordinates,
+      'EPSG:3857',
+      'EPSG:4326'
+    );
+    this.service
+      .getRoute(
+        [
+          [f1[0], f1[1]],
+          [f2[0], f2[1]],
+        ],
+        'route',
+        'foot'
+      )
+      .subscribe((result: any) => {
+        const polyline = result.routes[0].geometry;
+        const route = new Polyline({
+          factor: 1e6,
+        }).readGeometry(polyline, {
+          dataProjection: 'EPSG:4326',
+          featureProjection: 'EPSG:3857',
+        });
+        const routeFeature = new Feature({
+          type: 'route',
+          geometry: route,
+        });
+        console.log(routeFeature);
+        this.vectorLayer.getSource().addFeature(routeFeature);
+        const extent = routeFeature.getGeometry().getExtent();
+        this.map.getView().fit(extent, {
+          padding: [50, 50, 50, 50],
+          maxZoom: 18,
+          duration: 1000,
+        });
+      });
   }
 
   closePopup() {
@@ -590,41 +625,48 @@ export class LayoutComponent implements OnInit {
   }
 
   mapFunction(segments: Feature[]) {
-    this.vectorSource.addFeatures([...segments]);
+    this.vectorSource.addFeatures(segments);
   }
 
   flash(features: Feature[]) {
-    const start = Date.now();
-
-    let flashGeom: any[] = features.map((element) => {
+    let flashGeom: Geometry[] = features.map((element) => {
       return element.getGeometry()!.clone();
     });
-    const listenerKey = this.tileLayer.on('postrender', (event) => {
-      const frameState = event.frameState;
-      const elapsed = frameState!.time - start;
-      if (elapsed >= this.duration) {
-        unByKey(listenerKey);
-        return;
-      }
-      const vectorContext = getVectorContext(event);
-      const elapsedRatio = elapsed / this.duration;
-      const radius = easeOut(elapsedRatio) * 25 + 5;
-      const opacity = easeOut(1 - elapsedRatio);
-      const style = new Style({
-        image: new CircleStyle({
-          radius: radius,
-          stroke: new Stroke({
-            color: 'rgba(255, 0, 0, ' + opacity + ')',
-            width: 0.25 + opacity,
-          }),
-        }),
-      });
-      vectorContext.setStyle(style);
-      for (let x = 0; x < flashGeom.length; x++) {
-        vectorContext.drawGeometry(flashGeom[x]);
-      }
-      this.map.render();
+    this.map.getLayers().forEach((item) => {
+      this.applyPostrender(item, flashGeom);
     });
+  }
+  private applyPostrender(layer: any, flashGeom: Geometry[]) {
+    if (layer instanceof Tile) {
+      const start = Date.now();
+
+      const listenerKey = layer.on('postrender', (event) => {
+        const frameState = event.frameState;
+        const elapsed = frameState!.time - start;
+        if (elapsed >= this.duration) {
+          unByKey(listenerKey);
+          return;
+        }
+        const vectorContext = getVectorContext(event);
+        const elapsedRatio = elapsed / this.duration;
+        const radius = easeOut(elapsedRatio) * 25 + 5;
+        const opacity = easeOut(1 - elapsedRatio);
+        const style = new Style({
+          image: new CircleStyle({
+            radius: radius,
+            stroke: new Stroke({
+              color: 'rgba(255, 0, 0, ' + opacity + ')',
+              width: 0.25 + opacity,
+            }),
+          }),
+        });
+        vectorContext.setStyle(style);
+        for (let x = 0; x < flashGeom.length; x++) {
+          vectorContext.drawGeometry(flashGeom[x]);
+        }
+        this.map.render();
+      });
+    }
   }
 
   formatTime(nombre: number): string {
@@ -634,20 +676,14 @@ export class LayoutComponent implements OnInit {
     return nombre.toString();
   }
   initialData() {
+    this.removeSquares();
     this.activeDetails = false;
     this.endFeature = [];
-    this.showData.next(this.previousData);
+    if (this.previousData.data.length > 0)
+      this.showData.next(this.previousData);
+    else this.getAllData();
   }
 
-  switchOpenLayers() {
-    this.tileLayer.setVisible(true);
-    this.hereLayer.setVisible(false);
-  }
-
-  switchHereLayer() {
-    this.tileLayer.setVisible(false);
-    this.hereLayer.setVisible(true);
-  }
   formatCoordinates(data: number[][], id: number) {
     const square = new Feature({
       geometry: new Polygon([data]),
@@ -668,15 +704,29 @@ export class LayoutComponent implements OnInit {
 
   private formatToCoordinate(data: number[]) {
     return {
-      limiteHG: data[0] + ',' + data[1],
-      limiteHD: data[2] + ',' + data[3],
-      limiteBD: data[4] + ',' + data[5],
-      limiteBG: data[6] + ',' + data[7],
+      limiteHG: transform([data[0], data[1]], 'EPSG:3857', 'EPSG:4326').join(
+        ','
+      ),
+      limiteHD: transform([data[2], data[3]], 'EPSG:3857', 'EPSG:4326').join(
+        ','
+      ),
+      limiteBD: transform([data[4], data[5]], 'EPSG:3857', 'EPSG:4326').join(
+        ','
+      ),
+      limiteBG: transform([data[6], data[7]], 'EPSG:3857', 'EPSG:4326').join(
+        ','
+      ),
     };
   }
-  saveCoordinates() {
+
+  private removeSquares() {
     this.vectorSource.removeFeature(this.currentDraw);
     this.vectorSource.removeFeature(this.lastDraw);
+    this.lastDraw = null;
+    this.currentDraw = null;
+  }
+  saveCoordinates() {
+    this.removeSquares();
     this.lastDraw = null;
     this.map.removeInteraction(this.draw);
     const formatedCoordinates = this.formatToCoordinate(
@@ -698,11 +748,46 @@ export class LayoutComponent implements OnInit {
   }
 
   cancelCoordinates() {
-    this.vectorSource.removeFeature(this.currentDraw);
-    this.vectorSource.removeFeature(this.lastDraw);
+    this.removeSquares();
     this.lastDraw = null;
     this.map.removeInteraction(this.draw);
     this.drawId = null;
+  }
+
+  getLocation(): Promise<any> {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation)
+        reject("Vous avez besoin d'accorder la permission");
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((position) => {
+          const longitude = position.coords.longitude;
+          const latitude = position.coords.latitude;
+
+          const t = [longitude, latitude];
+
+          const webMercator = transform(t, 'EPSG:4326', 'EPSG:3857');
+
+          this.userLocation = [webMercator[0], webMercator[1]];
+          const feature = new Feature({
+            geometry: new Point(this.userLocation),
+          });
+          feature.setStyle(
+            new Style({
+              image: new Icon({
+                anchor: [0.5, 46],
+                anchorXUnits: 'fraction',
+                anchorYUnits: 'pixels',
+                scale: [0.09, 0.09],
+                opacity: 1,
+                src: `http://localhost:3000/images/202402131344594684.png`,
+              }),
+            })
+          );
+          this.mapFunction([feature]);
+          return resolve(null);
+        });
+      }
+    });
   }
 
   @HostListener('wheel', ['$event'])
