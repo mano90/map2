@@ -201,7 +201,6 @@ export class GeneralSettingsComponent implements OnInit {
       data: { device, edit: true },
     });
     dialogRef.afterClosed().subscribe((result) => {
-      // console.log(`Dialog result: ${result}`);
       if (result === 'success') {
         this.getAllDevice();
       }
@@ -225,5 +224,15 @@ export class GeneralSettingsComponent implements OnInit {
         this.notificationService.autoClose('success', 'Modifié');
       });
     }
+  }
+
+  changeStatusMultiple() {
+    const ids = Array.from(this.clickedRows.values());
+    this.notificationService.input().then((response) => {
+      this.service.updateSeuilMultiple(ids, +response.value).subscribe(() => {
+        this.getAllDevice();
+        this.notificationService.autoClose('success', 'Modifié');
+      });
+    });
   }
 }
