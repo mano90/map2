@@ -5,19 +5,7 @@
     <button class="btn btn-outline btn-header" (click)="initialData()">
       ACCUEIL
     </button>
-    <button *ngIf="activeDetails" class="btn btn-outline btn-header">
-      DETAILS
-    </button>
 
-    <button *ngIf="drawId && lastDraw" (click)="saveCoordinates()">
-      Modifier
-    </button>
-    <button *ngIf="drawId && lastDraw" (click)="cancelCoordinates()">
-      Annuler
-    </button>
-
-    <button (click)="switchOpenLayers()">OpenLayers</button>
-    <button (click)="switchHereLayer()">HereTile</button>
     <button
       class="btn btn-outline btn-header params"
       mat-button
@@ -40,9 +28,59 @@
 </header>
 
 <main>
-  <div class="left-bar">
+  <!-- <div class="left-bar">
     <h2>Liste des appareils</h2>
-    <button class="map-control">N</button>
+    <button
+      (click)="getLocation()"
+      appTopChange
+      [top]="'60px'"
+      matTooltip="Localisation"
+      class="map-control"
+    >
+      <mat-icon>gps_fixed</mat-icon>
+    </button>
+    <ng-container *ngFor="let layer of backgroundLayers">
+      <button
+        appTopChange
+        [top]="layer.top"
+        (click)="updateBackgroundLayer(layer)"
+        [matTooltip]="layer.name"
+        class="map-control"
+        [style.backgroundImage]="'url(' + layer.background + ')'"
+      ></button>
+    </ng-container>
+    <button
+      *ngIf="activeDetails || (currentDraw && !lastDraw)"
+      (click)="initialData()"
+      appTopChange
+      [top]="'260px'"
+      matTooltip="Retour"
+      class="map-control"
+    >
+      <mat-icon>undo</mat-icon>
+    </button>
+
+    <button
+      *ngIf="drawId && lastDraw"
+      (click)="saveCoordinates()"
+      appTopChange
+      matTooltip="Sauvegarder"
+      [top]="'300px'"
+      class="map-control"
+    >
+      <mat-icon>check</mat-icon>
+    </button>
+    <button
+      *ngIf="drawId && lastDraw"
+      (click)="cancelCoordinates()"
+      appTopChange
+      matTooltip="Annuler"
+      [top]="'340px'"
+      class="map-control"
+    >
+      <mat-icon>close</mat-icon>
+    </button>
+
     <div class="row">
       <div class="col-md-1"></div>
       <div class="col-md-10">
@@ -109,11 +147,11 @@
         </select>
       </div>
       <div class="col-md-1"></div>
-      <!-- <button class="btn btn-success col-md-10" (click)="pasteData()"> -->
-      <!-- Filtrer -->
-      <!-- </button> -->
     </div>
-  </div>
+  </div> -->
+
+  <app-sidebar (messageEvent)="receiveMessage($event)"></app-sidebar>
+
   <div class="map-container">
     <app-map [map]="map"></app-map>
   </div>
