@@ -57,4 +57,25 @@ export class NotificationService {
       title,
     });
   }
+
+  input() {
+    return Swal.fire({
+      title: 'Entrez le seuil ',
+      input: 'number',
+      inputAttributes: {
+        min: '1900',
+        max: '2099',
+        step: '1',
+      },
+      showCancelButton: true,
+      confirmButtonText: 'Ok',
+      cancelButtonText: 'Cancel',
+      inputValidator: (value) => {
+        if (!value || +value <= 0) {
+          return 'Valeur invalide';
+        }
+        return null;
+      },
+    });
+  }
 }
