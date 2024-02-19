@@ -1,7 +1,7 @@
 import { HttpClientModule } from '@angular/common/http';
 import { NgModule, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
-import { DecimalPipe } from '@angular/common';
+import { CommonModule, DecimalPipe } from '@angular/common';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -9,7 +9,7 @@ import { AppComponent } from './app.component';
 import { MapComponent } from './components/map/map.component';
 import { ScalelineComponent } from './components/scaleline/scaleline.component';
 import { MousePositionComponent } from './components/mouse-position/mouse-position.component';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NgxSpinnerModule } from 'ngx-spinner';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { LayoutComponent } from './layout/layout.component';
@@ -18,6 +18,23 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { TopChangeDirective } from './top-change.directive';
+import { SidebarComponent } from './sidebar/sidebar.component';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
+import {
+  MatSlideToggleModule,
+  _MatSlideToggleRequiredValidatorModule,
+} from '@angular/material/slide-toggle';
+import { MatInputModule } from '@angular/material/input';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatTableModule } from '@angular/material/table';
+import { RouterModule } from '@angular/router';
+import { MatCardModule } from '@angular/material/card';
+import { MatPaginatorModule } from '@angular/material/paginator';
+import { MatSortModule } from '@angular/material/sort';
+import { MatDialogModule } from '@angular/material/dialog';
 
 @NgModule({
   declarations: [
@@ -27,6 +44,8 @@ import { MatIconModule } from '@angular/material/icon';
     MousePositionComponent,
     LayoutComponent,
     DeviceSettingsComponent,
+    TopChangeDirective,
+    SidebarComponent,
   ],
   imports: [
     BrowserModule,
@@ -39,6 +58,22 @@ import { MatIconModule } from '@angular/material/icon';
     MatMenuModule,
     MatButtonModule,
     MatIconModule,
+    MatTooltipModule,
+    MatIconModule,
+    ReactiveFormsModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
+    CommonModule,
+    MatSlideToggleModule,
+    _MatSlideToggleRequiredValidatorModule,
+    MatInputModule,
+    MatFormFieldModule,
+    MatTableModule,
+    RouterModule,
+    MatCardModule,
+    MatPaginatorModule,
+    MatSortModule,
+    MatDialogModule,
   ],
   providers: [DecimalPipe],
   bootstrap: [AppComponent],
