@@ -4,7 +4,8 @@ import { Observable } from 'rxjs';
 import { Device } from 'src/app/classes/Device';
 import { Locate } from 'src/app/classes/Locate';
 import { environment } from 'src/environments/environment';
-
+type ServiceOSRM = 'route' | 'nearest' | 'table' | 'match' | 'trip' | 'tile';
+type ProfileOSRM = 'car' | 'bike' | 'foot' | 'driving';
 @Injectable({
   providedIn: 'root',
 })
@@ -53,5 +54,21 @@ export class ApicallService {
     };
     const url = environment.backUrl + '/device/updateCoordinates/' + id;
     return this.http.post<any[]>(url, data);
+  }
+
+  updateSeuilMultiple(ids: number[], seuil: number) {
+    const url = environment.backUrl + '/device/updateMultipleSeuil';
+    return this.http.post<any[]>(url, { ids, seuil });
+  }
+
+  getRoute(
+    coordinates: [number, number][],
+    service: ServiceOSRM,
+    profile: ProfileOSRM
+  ) {
+    const url = `http://router.project-osrm.org/${service}/v1/${profile}/${coordinates.join(
+      ';'
+    )}?overview=full&geometries=polyline6`;
+    return this.http.get(url);
   }
 }
