@@ -47,7 +47,7 @@ export class EditDeviceComponent implements OnInit {
   ngOnInit(): void {
     let data: Device = {
       name: null,
-      serverAddress: null,
+      deviceNumber: null,
       seuil: null,
       // icon: null,
     };
@@ -60,7 +60,7 @@ export class EditDeviceComponent implements OnInit {
 
     this.deviceForm = this.formBuilder.group({
       name: [data.name, Validators.required],
-      serverAddress: [data.serverAddress, Validators.required],
+      deviceNumber: [data.deviceNumber, Validators.required],
       seuil: [data.seuil, Validators.required],
     });
   }
