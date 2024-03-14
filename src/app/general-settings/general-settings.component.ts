@@ -1,27 +1,8 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
-import {
-  AbstractControl,
-  FormBuilder,
-  FormGroup,
-  ReactiveFormsModule,
-} from '@angular/forms';
-import {
-  MomentDateAdapter,
-  MAT_MOMENT_DATE_ADAPTER_OPTIONS,
-} from '@angular/material-moment-adapter';
-import {
-  DateAdapter,
-  MAT_DATE_FORMATS,
-  MAT_DATE_LOCALE,
-} from '@angular/material/core';
-
-import * as _moment from 'moment';
-import { default as _rollupMoment } from 'moment';
-import { MatDatepickerModule } from '@angular/material/datepicker';
+import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import Swal from 'sweetalert2';
-const moment = _rollupMoment || _moment;
 
 export const MY_FORMATS = {
   parse: {
@@ -40,7 +21,6 @@ import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatTableModule } from '@angular/material/table';
 
-import { MatNativeDateModule } from '@angular/material/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import {
@@ -49,7 +29,7 @@ import {
 } from '@angular/material/slide-toggle';
 import { CommonModule } from '@angular/common';
 import { MatMenuModule } from '@angular/material/menu';
-import { Router, RouterModule } from '@angular/router';
+import { RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { HttpClientModule } from '@angular/common/http';
@@ -71,8 +51,6 @@ import { NotificationService } from '../services/notification/notification.servi
     MatButtonModule,
     ReactiveFormsModule,
     MatInputModule,
-    MatDatepickerModule,
-    MatNativeDateModule,
     MatButtonModule,
     MatFormFieldModule,
     MatTooltipModule,
@@ -86,14 +64,6 @@ import { NotificationService } from '../services/notification/notification.servi
     MatSortModule,
     MatDialogModule,
   ],
-  providers: [
-    {
-      provide: DateAdapter,
-      useClass: MomentDateAdapter,
-      deps: [MAT_DATE_LOCALE, MAT_MOMENT_DATE_ADAPTER_OPTIONS],
-    },
-    { provide: MAT_DATE_FORMATS, useValue: MY_FORMATS },
-  ],
 })
 export class GeneralSettingsComponent implements OnInit {
   @ViewChild(MatPaginator) paginator: MatPaginator;
@@ -103,7 +73,7 @@ export class GeneralSettingsComponent implements OnInit {
     'id',
     'icon',
     'name',
-    'serverAddress',
+    'deviceNumber',
     'seuil',
     'status',
     'action',
@@ -114,17 +84,15 @@ export class GeneralSettingsComponent implements OnInit {
     'id',
     'icon',
     'name',
-    'serverAddress',
+    'deviceNumber',
     'seuil',
     'status',
   ];
   dataSource: MatTableDataSource<Device>;
   clickedRows = new Set<number>();
   constructor(
-    private _formBuilder: FormBuilder,
     private service: ApicallService,
     private notificationService: NotificationService,
-    private route: Router,
     public dialog: MatDialog
   ) {}
 
@@ -141,28 +109,7 @@ export class GeneralSettingsComponent implements OnInit {
     }
   }
   ngOnInit(): void {
-    this.formGroup.disable();
     this.getAllDevice();
-  }
-  formGroup = this._formBuilder.group(
-    {
-      online: true,
-      offline: '',
-      maintenance: '',
-      dateDebut: [moment()],
-      dateFin: [moment()],
-    },
-    { validator: this.dateDebutBeforeDateFinValidator }
-  );
-  dateDebutBeforeDateFinValidator(
-    control: AbstractControl
-  ): { [key: string]: boolean } | null {
-    const dateDebut = control.get('dateDebut')!.value;
-    const dateFin = control.get('dateFin')!.value;
-    if (dateDebut && dateFin && moment(dateDebut).isAfter(dateFin)) {
-      return { dateDebutAfterDateFin: true };
-    }
-    return null;
   }
 
   addRow(id: number) {
@@ -234,5 +181,13 @@ export class GeneralSettingsComponent implements OnInit {
         this.notificationService.autoClose('success', 'Modifié');
       });
     });
+  }
+  chekStatusMultiple() {
+    const ids = Array.from(this.clickedRows.values());
+    this.service.getStatuses(ids).subscribe((res) => console.log(res));
+  }
+
+  checkStatus(id: number) {
+    this.service.getStatus(id).subscribe((res) => console.log(res));
   }
 }
