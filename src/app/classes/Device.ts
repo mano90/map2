@@ -5,12 +5,13 @@ export class Device {
   name: string;
   icon?: string;
   id?: number;
-  serverAddress: string;
+  deviceNumber: string;
+
   status?: DeviceStatus;
   devicePositions?: Locate[];
   seuil: number;
   limiteHG?: string;
-  limiteHD?: string;
   limiteBD?: string;
-  limiteBG?: string;
+  blinkLimites?: boolean;
+  blinkSeuil?: boolean;
 }
