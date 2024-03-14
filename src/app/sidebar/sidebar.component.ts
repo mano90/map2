@@ -1,8 +1,17 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { AbstractControl, FormBuilder, FormGroup } from '@angular/forms';
+import {
+  AbstractControl,
+  FormBuilder,
+  FormControl,
+  FormGroup,
+} from '@angular/forms';
 
 import * as _moment from 'moment';
 import { default as _rollupMoment } from 'moment';
+import { DeviceStatus } from '../classes/DeviceStatus';
+import { HistoryDataFilter } from '../classes/HistoryDataFilter';
+import { ApicallService } from '../services/requests/apicall.service';
+import { Locate } from '../classes/Locate';
 const moment = _rollupMoment || _moment;
 
 @Component({
@@ -16,12 +25,18 @@ export class SidebarComponent implements OnInit {
   formGroup = this._formBuilder.group(
     {
       online: true,
-      offline: '',
-      maintenance: '',
-      dateDebut: [moment()],
+      offline: true,
+      unknownStatus: true,
+      maintenance: new FormControl({ value: '', disabled: true }),
+      dateDebut: [],
       dateFin: [moment()],
     },
-    { validator: this.dateDebutBeforeDateFinValidator }
+    {
+      validators: [
+        this.dateDebutBeforeDateFinValidator,
+        this.atLeastOneStatusCheckedValidator,
+      ],
+    }
   );
   dateDebutBeforeDateFinValidator(
     control: AbstractControl
@@ -33,20 +48,59 @@ export class SidebarComponent implements OnInit {
     }
     return null;
   }
-  constructor(private _formBuilder: FormBuilder) {}
+
+  private atLeastOneStatusCheckedValidator(
+    control: AbstractControl
+  ): { [key: string]: boolean } | null {
+    if (
+      control.get('online').value !== true &&
+      control.get('offline').value !== true &&
+      control.get('unknownStatus').value !== true
+    ) {
+      return { statusRequired: true };
+    }
+    return null;
+  }
+
+  constructor(
+    private _formBuilder: FormBuilder,
+    private service: ApicallService
+  ) {}
 
   ngOnInit(): void {}
 
   toggleSidebar() {
     this.isSidebarOpen = !this.isSidebarOpen;
   }
-  @Output() messageEvent = new EventEmitter<string>();
-
-  sendMessage() {
-    this.messageEvent.emit('Message from Child');
-  }
+  @Output() messageEvent = new EventEmitter<{
+    data: Locate[];
+    end: Date;
+    begin?: Date;
+  }>();
 
   alertFormValues(formGroup: FormGroup) {
-    alert(JSON.stringify(formGroup.value, null, 2));
+    const statuses: DeviceStatus[] = [];
+    let dateFin: Date = new Date();
+    if (formGroup.get('online').value) statuses.push(DeviceStatus.ONLINE);
+    if (formGroup.get('offline').value) statuses.push(DeviceStatus.OFFLINE);
+    if (formGroup.get('unknownStatus').value)
+      statuses.push(DeviceStatus.UNKNOWN);
+    if (formGroup.get('dateFin'))
+      dateFin = new Date(formGroup.get('dateFin').value);
+    const filterData: HistoryDataFilter = {
+      end: dateFin,
+      status: statuses,
+    };
+    if (formGroup.get('dateDebut')) {
+      filterData.begin = new Date(formGroup.get('dateDebut').value);
+    }
+    this.service.getDevicesByFilter(filterData).subscribe((res) => {
+      this.messageEvent.emit({
+        data: res,
+        end: filterData.end,
+        begin: filterData.begin,
+      });
+      this.isSidebarOpen = !this.isSidebarOpen;
+    });
   }
 }
