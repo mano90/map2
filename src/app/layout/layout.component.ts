@@ -44,23 +44,25 @@ import { createBox } from 'ol/interaction/Draw';
 import { NotificationService } from '../services/notification/notification.service';
 import { BackgroundMapService } from '../services/map/background-map.service';
 import { Coordinate } from 'ol/coordinate';
+import { Socket } from 'ngx-socket-io';
 
-const DATES: string[] = ['2022-02-02', '2022-02-03'];
-const IMEIS: string[] = ['751345975112', '891144473251'];
-
+const a = fromLonLat([43.5, -25.6]);
+const b = fromLonLat([50.5, -12.0]);
+const madagascarExtent = [...a, ...b];
 @Component({
   selector: 'app-root',
   templateUrl: './layout.component.html',
   styleUrls: ['./layout.component.scss'],
 })
 export class LayoutComponent implements OnInit {
-  message: string;
+  begin: Date;
+  end: Date;
 
   receiveMessage($event: any) {
-    // this.getAllData();
-    this.vectorSource.clear();
-    // console.log($event);
-    // this.message = $event;
+    this.previousData = this.showData.getValue();
+    this.showData.next({ data: $event.data, showSegment: false });
+    this.begin = $event.begin;
+    this.end = $event.end;
   }
   userLocation: [number, number];
   @ViewChild('content') content: ElementRef;
@@ -74,27 +76,18 @@ export class LayoutComponent implements OnInit {
   activeDetails: boolean = false;
   vectorSource: VectorSource = new VectorSource();
   vectorLayer: VectorLayer<any> = new VectorLayer();
-  dates: string[] = DATES;
-  ids: string[] = IMEIS;
   previousData: { data: Locate[]; showSegment: boolean };
-  selectedDate: string = 'All';
-  selectedId: string = 'All';
 
   duration: number = 3000;
   scroll = false;
   timeout: any;
   endFeature: Feature[] = [];
-  debut: boolean = false;
-  fin: boolean = false;
-  timeBegin: Time;
-  timeEnd: Time;
   overlay: Overlay;
   contentPopup: HTMLElement | null = null;
   lastDraw: Feature<Geometry>;
   currentDraw: Feature<Polygon>;
   draw: Draw;
   backgroundLayers: any[];
-
   constructor(
     private coordinateFormatterService: CoordinateFormatterService,
     private _rta: RtaService,
@@ -102,10 +95,22 @@ export class LayoutComponent implements OnInit {
     private spinner: NgxSpinnerService,
     private service: ApicallService,
     private notificationService: NotificationService,
-    private backgroundMapService: BackgroundMapService
+    private backgroundMapService: BackgroundMapService,
+    private socket: Socket
   ) {}
 
+  sendMessage(message: string) {
+    this.socket.emit('message', message);
+  }
+
   ngOnInit(): void {
+    this.socket.connect();
+
+    this.socket.on('message', (data: string) => {
+      console.log('Message received from server: ' + data);
+      // Handle the received message in your Angular application
+    });
+    this.sendMessage('Test');
     this.backgroundLayers = this.backgroundMapService.getBackgroundLayers();
 
     this.contentPopup = document.getElementById('popup-content');
@@ -130,6 +135,10 @@ export class LayoutComponent implements OnInit {
         projection: 'EPSG:3857',
         center: [5447146.549216399, -2173252.1023832164],
         zoom: 6,
+        minZoom: 6,
+        maxZoom: 18,
+        extent: madagascarExtent,
+        constrainOnlyCenter: true,
       }),
       interactions: defaultInteractions({
         doubleClickZoom: false,
@@ -209,6 +218,35 @@ export class LayoutComponent implements OnInit {
       this.spinner.hide();
     });
   }
+  addMovingMarker(points: number[][]): void {
+    const line = new LineString(points.map((item) => item));
+    const markerStyle = new Style({
+      image: new CircleStyle({
+        radius: 7,
+        fill: new Fill({ color: 'black' }),
+        stroke: new Stroke({ color: 'white', width: 2 }),
+      }),
+    });
+
+    const marker = new Feature({
+      type: 'icon',
+      geometry: new Point(fromLonLat(points[0])),
+    });
+    marker.setStyle(markerStyle);
+    this.vectorSource.addFeature(marker);
+    let i = 0;
+    const steps = 150;
+    const delta = 1 / steps;
+    const moveMarker = () => {
+      if (i < steps) {
+        i++;
+        const point = line.getCoordinateAt(i * delta);
+        marker.getGeometry().setCoordinates(point);
+        requestAnimationFrame(moveMarker);
+      }
+    };
+    moveMarker();
+  }
 
   getAllData() {
     this.service.getAllDevices().subscribe((res) => {
@@ -220,7 +258,7 @@ export class LayoutComponent implements OnInit {
     this.map.getLayers().setAt(0, newLayer.layer);
   }
   getSpecifiedData(id: number) {
-    this.service.getOneById(id).subscribe((res) => {
+    this.service.getOneById(id, this.end, this.begin).subscribe((res) => {
       this.previousData = this.showData.getValue();
       this.showData.next({ data: res, showSegment: true });
     });
@@ -230,11 +268,13 @@ export class LayoutComponent implements OnInit {
     this.removeSquares();
     this.service.getDeviceById(id).subscribe((res) => {
       const data: number[][] = [];
-      data.push(fromLonLat(res.limiteHG.split(',').map((e) => +e)));
-      data.push(fromLonLat(res.limiteHD.split(',').map((e) => +e)));
-      data.push(fromLonLat(res.limiteBD.split(',').map((e) => +e)));
-      data.push(fromLonLat(res.limiteBG.split(',').map((e) => +e)));
-      data.push(fromLonLat(res.limiteHG.split(',').map((e) => +e)));
+      const limitesHG = res.limiteHG.split(',').map((e) => +e);
+      const limitesBD = res.limiteBD.split(',').map((e) => +e);
+      data.push(fromLonLat(limitesHG));
+      data.push(fromLonLat([limitesBD[0], limitesHG[1]]));
+      data.push(fromLonLat(limitesBD));
+      data.push(fromLonLat([limitesHG[0], limitesBD[1]]));
+      data.push(fromLonLat(limitesHG));
       this.formatCoordinates(data, id);
     });
   }
@@ -421,54 +461,11 @@ export class LayoutComponent implements OnInit {
   }
 
   pasteData(locate: Locate[], setSegment: boolean = false) {
-    const date: string = this.selectedDate;
-    const id: string = this.selectedId;
     let newArray: Locate[] = locate;
-    if (this.selectedDate !== 'All') {
-      newArray = newArray.filter((item) => {
-        const date1: Date = new Date(date);
-        const date2: Date = new Date(item.date);
-        if (
-          date1.getFullYear() == date2.getFullYear() &&
-          date1.getMonth() == date2.getMonth() &&
-          date1.getDate() == date2.getDate()
-        )
-          return true;
-        else return false;
-      });
-      if (this.debut === true) {
-        newArray = newArray.filter((item) => {
-          const date1: Date = new Date(date + 'T' + this.timeBegin);
-          const date2: Date = new Date(item.date);
-          if (date1.getTime() <= date2.getTime()) return true;
-          else return false;
-        });
-      }
-      if (this.fin === true) {
-        newArray = newArray.filter((item) => {
-          const date1: Date = new Date(date + 'T' + this.timeEnd);
-          const date2: Date = new Date(item.date);
-          if (date1.getTime() > date2.getTime()) return true;
-          else return false;
-        });
-      }
-    }
 
-    if (this.selectedId !== 'All') {
-      newArray = newArray.filter((item) => {
-        return item.device.id == +id;
-      });
-    }
     this.vectorSource.clear();
     this.mapFunction(this.getPoints(newArray));
     if (setSegment) this.mapFunction(this.getSegments(newArray));
-  }
-
-  changeDate(event: any) {
-    this.selectedDate = event.target.value;
-  }
-  changeTelephone(event: any) {
-    this.selectedId = event.target.value;
   }
 
   getPoints(features: Locate[]): Feature[] {
@@ -621,6 +618,14 @@ export class LayoutComponent implements OnInit {
       );
       segment.push(segmReturn);
     }
+    const t = segment.slice(0, -1);
+    this.addMovingMarker(
+      t.map((item) => {
+        const drawnGeometry = item.getGeometry() as LineString;
+        const properties = drawnGeometry.getFlatCoordinates();
+        return [properties[0], properties[1]];
+      })
+    );
     return segment;
   }
 
@@ -676,12 +681,12 @@ export class LayoutComponent implements OnInit {
     return nombre.toString();
   }
   initialData() {
+    this.begin = null;
+    this.end = null;
     this.removeSquares();
     this.activeDetails = false;
     this.endFeature = [];
-    if (this.previousData.data.length > 0)
-      this.showData.next(this.previousData);
-    else this.getAllData();
+    this.getAllData();
   }
 
   formatCoordinates(data: number[][], id: number) {
@@ -737,9 +742,7 @@ export class LayoutComponent implements OnInit {
       .updateCoordinates(
         id,
         formatedCoordinates.limiteHG,
-        formatedCoordinates.limiteHD,
-        formatedCoordinates.limiteBD,
-        formatedCoordinates.limiteBG
+        formatedCoordinates.limiteBD
       )
       .subscribe(() => {
         this.notificationService.autoClose('success', 'Modification effectuée');
