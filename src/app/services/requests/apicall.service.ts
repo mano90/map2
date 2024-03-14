@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { Device } from 'src/app/classes/Device';
+import { HistoryDataFilter } from 'src/app/classes/HistoryDataFilter';
 import { Locate } from 'src/app/classes/Locate';
 import { environment } from 'src/environments/environment';
 type ServiceOSRM = 'route' | 'nearest' | 'table' | 'match' | 'trip' | 'tile';
@@ -16,8 +17,14 @@ export class ApicallService {
     const url = environment.backUrl + '/device/getAll';
     return this.http.get<Locate[]>(url);
   }
-  getOneById(id: number): Observable<Locate[]> {
-    const url = environment.backUrl + '/device/getOneById/' + id;
+  getOneById(id: number, end: Date, begin?: Date): Observable<Locate[]> {
+    let url = environment.backUrl + '/device/getOneById/' + id;
+    if (end) {
+      url += '/' + end;
+    }
+    if (begin) {
+      url += '/' + begin;
+    }
     return this.http.get<Locate[]>(url);
   }
 
@@ -39,18 +46,10 @@ export class ApicallService {
     const url = environment.backUrl + '/device/getRawOneById/' + id;
     return this.http.get<Device>(url);
   }
-  updateCoordinates(
-    id: number,
-    limiteHG: string,
-    limiteHD: string,
-    limiteBD: string,
-    limiteBG: string
-  ) {
+  updateCoordinates(id: number, limiteHG: string, limiteBD: string) {
     const data = {
       limiteHG,
-      limiteHD,
       limiteBD,
-      limiteBG,
     };
     const url = environment.backUrl + '/device/updateCoordinates/' + id;
     return this.http.post<any[]>(url, data);
@@ -70,5 +69,18 @@ export class ApicallService {
       ';'
     )}?overview=full&geometries=polyline6`;
     return this.http.get(url);
+  }
+
+  getDevicesByFilter(data: HistoryDataFilter): Observable<Locate[]> {
+    const url = environment.backUrl + '/history/getByFilter';
+    return this.http.post<Locate[]>(url, data);
+  }
+  getStatus(id: number) {
+    const url = environment.backUrl + '/message/checkStatus/' + id;
+    return this.http.get<any>(url);
+  }
+  getStatuses(phoneNumbers: number[]) {
+    const url = environment.backUrl + '/message/checkStatuses/';
+    return this.http.post<any>(url, { phoneNumbers });
   }
 }
