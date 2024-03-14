@@ -31,21 +31,40 @@
             ngNativeValidate
           >
             <div class="row">
-              <div class="col-lg-4">
+              <div class="col-lg-3">
                 <mat-slide-toggle color="primary" formControlName="online">
                   En ligne
                 </mat-slide-toggle>
               </div>
-              <div class="col-lg-4">
+              <div class="col-lg-3">
                 <mat-slide-toggle color="primary" formControlName="offline">
                   Hors ligne
                 </mat-slide-toggle>
               </div>
-              <div class="col-lg-4">
-                <mat-slide-toggle color="primary" formControlName="maintenance">
+              <div class="col-lg-3">
+                <mat-slide-toggle
+                  color="primary"
+                  formControlName="unknownStatus"
+                >
+                  Incertain
+                </mat-slide-toggle>
+              </div>
+              <div class="col-lg-3">
+                <mat-slide-toggle
+                  color="primary"
+                  formControlName="maintenance"
+                  [disabled]="true"
+                >
                   En maintenance
                 </mat-slide-toggle>
               </div>
+
+              <mat-error
+                class="col-lg-12"
+                *ngIf="formGroup.hasError('statusRequired')"
+              >
+                Choisir au moins un status
+              </mat-error>
             </div>
             <div class="row">
               <div class="col-lg-12">
@@ -81,8 +100,10 @@
               </mat-form-field>
               <div class="row">
                 <div class="col-lg-12">
-                  <mat-error *ngIf="formGroup.invalid">
-                    Invalid date
+                  <mat-error
+                    *ngIf="formGroup.hasError('dateDebutAfterDateFin')"
+                  >
+                    Date invalide
                   </mat-error>
                 </div>
               </div>
@@ -99,6 +120,5 @@
         </mat-card-content>
       </mat-card>
     </div>
-    <!-- <button (click)="sendMessage()">Envoyer</button> -->
   </ng-container>
 </div>
