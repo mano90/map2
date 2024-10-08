@@ -5,7 +5,7 @@ import {
   OnInit,
   ViewChild,
 } from '@angular/core';
-import Map from 'ol/Map';
+import { Map as OlMap } from 'ol';
 import View from 'ol/View';
 import TileLayer from 'ol/layer/Tile';
 import OSM from 'ol/source/OSM';
@@ -45,6 +45,9 @@ import { NotificationService } from '../services/notification/notification.servi
 import { BackgroundMapService } from '../services/map/background-map.service';
 import { Coordinate } from 'ol/coordinate';
 import { Socket } from 'ngx-socket-io';
+import { environment } from 'src/environments/environment';
+import { DeviceColorBlinking } from '../classes/DeviceColorBlinking';
+import { Device, FeatureToBlink } from '../classes/Device';
 
 const a = fromLonLat([43.5, -25.6]);
 const b = fromLonLat([50.5, -12.0]);
@@ -58,7 +61,10 @@ export class LayoutComponent implements OnInit {
   begin: Date;
   end: Date;
 
+  featuresToBlink: FeatureToBlink[] = [];
+
   receiveMessage($event: any) {
+    this.clearAllIntervals();
     this.previousData = this.showData.getValue();
     this.showData.next({ data: $event.data, showSegment: false });
     this.begin = $event.begin;
@@ -68,7 +74,7 @@ export class LayoutComponent implements OnInit {
   @ViewChild('content') content: ElementRef;
   currentCoordinates: number[];
   drawId: number;
-  map: Map;
+  map: OlMap;
   showData = new BehaviorSubject<{ data: Locate[]; showSegment: boolean }>({
     data: [],
     showSegment: false,
@@ -88,6 +94,8 @@ export class LayoutComponent implements OnInit {
   currentDraw: Feature<Polygon>;
   draw: Draw;
   backgroundLayers: any[];
+
+  private flashIntervals: Map<string, any> = new Map();
   constructor(
     private coordinateFormatterService: CoordinateFormatterService,
     private _rta: RtaService,
@@ -101,6 +109,10 @@ export class LayoutComponent implements OnInit {
 
   sendMessage(message: string) {
     this.socket.emit('message', message);
+  }
+
+  reInitMap() {
+    window.location.reload();
   }
 
   ngOnInit(): void {
@@ -130,7 +142,7 @@ export class LayoutComponent implements OnInit {
         }),
       }),
     });
-    this.map = new Map({
+    this.map = new OlMap({
       view: new View({
         projection: 'EPSG:3857',
         center: [5447146.549216399, -2173252.1023832164],
@@ -316,9 +328,11 @@ export class LayoutComponent implements OnInit {
     const deplacement = this.formatButton(document.createElement('button'));
     deplacement.innerHTML = 'Historique';
     deplacement.addEventListener('click', () => {
+      this.clearAllIntervals();
       this.getDeplacements(id);
       this.overlay.setPosition(undefined);
     });
+
     const maintenance = this.formatButton(document.createElement('button'));
     maintenance.innerHTML = 'Trajet';
     maintenance.addEventListener('click', () => {
@@ -329,23 +343,98 @@ export class LayoutComponent implements OnInit {
       else this.getTraject(id, feature);
       this.overlay.setPosition(undefined);
     });
+
     const settings = this.formatButton(document.createElement('button'));
     settings.innerHTML = 'Délimitations';
     settings.addEventListener('click', () => {
       this.getDelimitations(+id);
       this.overlay.setPosition(undefined);
     });
+
+    const alertButtonContainer = document.createElement('div');
+
+    if (feature.getProperties()['alertType']) {
+      const alertType = feature.getProperties()['alertType'];
+
+      if (alertType.credit) {
+        const creditAlertButton = this.formatButton(
+          document.createElement('button')
+        );
+        creditAlertButton.innerHTML = 'Stop Credit Alert';
+        creditAlertButton.addEventListener('click', () => {
+          this.service
+            .sendStopAlertMessage(feature.getProperties()['deviceNumber'], 'C')
+            .subscribe();
+          this.notificationService.info('Mise à jour en cours');
+          this.overlay.setPosition(undefined);
+
+          setTimeout(() => {
+            // this.stopFlashing(
+            //   feature.get('id'),
+            //   DeviceColorBlinking.BLINKCREDIT
+            // );
+            window.location.reload();
+          }, 2500);
+        });
+        alertButtonContainer.appendChild(creditAlertButton);
+      }
+
+      if (alertType.limites) {
+        const limitesAlertButton = this.formatButton(
+          document.createElement('button')
+        );
+        limitesAlertButton.innerHTML = 'Stop Limites Alert';
+        limitesAlertButton.addEventListener('click', () => {
+          this.service
+            .sendStopAlertMessage(feature.getProperties()['deviceNumber'], 'L')
+            .subscribe();
+          this.notificationService.info('Mise à jour en cours');
+          this.overlay.setPosition(undefined);
+          setTimeout(() => {
+            window.location.reload();
+          }, 2500);
+        });
+        alertButtonContainer.appendChild(limitesAlertButton);
+      }
+
+      if (alertType.seuil) {
+        const seuilAlertButton = this.formatButton(
+          document.createElement('button')
+        );
+        seuilAlertButton.innerHTML = 'Stop Seuil Alert';
+        seuilAlertButton.addEventListener('click', () => {
+          this.service
+            .sendStopAlertMessage(feature.getProperties()['deviceNumber'], 'T')
+            .subscribe();
+          this.notificationService.info('Mise à jour en cours');
+          this.overlay.setPosition(undefined);
+          setTimeout(() => {
+            window.location.reload();
+          }, 2500);
+        });
+        alertButtonContainer.appendChild(seuilAlertButton);
+      }
+    }
+
     const deplacementContainer = document.createElement('div');
     const maintenanceContainer = document.createElement('div');
     const settingsContainer = document.createElement('div');
+
     deplacementContainer.style.paddingBottom = '2px';
     maintenanceContainer.style.paddingBottom = '2px';
+
     deplacementContainer.append(deplacement);
     maintenanceContainer.append(maintenance);
     settingsContainer.append(settings);
 
-    return [deplacementContainer, maintenanceContainer, settingsContainer];
+    return [
+      deplacementContainer,
+      maintenanceContainer,
+      settingsContainer,
+      alertButtonContainer,
+    ];
   }
+
   formatButton(document: HTMLButtonElement): HTMLButtonElement {
     document.style.cssText = `
     width: 150px;
@@ -465,24 +554,64 @@ export class LayoutComponent implements OnInit {
 
     this.vectorSource.clear();
     this.mapFunction(this.getPoints(newArray));
+    if (this.featuresToBlink) this.flashMultiple(this.featuresToBlink);
     if (setSegment) this.mapFunction(this.getSegments(newArray));
   }
 
   getPoints(features: Locate[]): Feature[] {
     const points: Feature[] = [];
-    for (let feature of features) {
+    for (let featureData of features) {
       let feat: Feature = new Feature({
         type: 'icon',
-        geometry: new Point(fromLonLat([feature.longitude, feature.latitude])),
+        geometry: new Point(
+          fromLonLat([featureData.longitude, featureData.latitude])
+        ),
       });
-      feat.set('id', feature.device.id);
+      feat.set('id', featureData.device.id);
+
+      let alertType: any = {};
+
+      if (featureData.device.blinkCredit) {
+        this.featuresToBlink.push({
+          deviceColorBlinking: DeviceColorBlinking.BLINKCREDIT,
+          featureId: String(featureData.device.id),
+        });
+        alertType.credit = true;
+      }
+
+      if (featureData.device.blinkLimites) {
+        alertType.limites = true;
+        this.featuresToBlink.push({
+          deviceColorBlinking: DeviceColorBlinking.BLINKLIMITES,
+          featureId: String(featureData.device.id),
+        });
+      }
+
+      if (featureData.device.blinkSeuil) {
+        alertType.seuil = true;
+        this.featuresToBlink.push({
+          deviceColorBlinking: DeviceColorBlinking.BLINKSEUIL,
+          featureId: String(featureData.device.id),
+        });
+      }
+
+      if (Object.keys(alertType).length > 0) {
+        feat.setProperties({
+          alertType: alertType,
+        });
+      }
+
+      feat.setProperties({
+        deviceNumber: featureData.device.deviceNumber,
+      });
+
       feat.setStyle(
         new Style({
           image: new Icon({
             anchor: [0.5, 46],
             anchorXUnits: 'fraction',
             anchorYUnits: 'pixels',
-            src: `http://localhost:3000/images/${feature.device.icon}`,
+            src: `${environment.imageStaticUrl}${featureData.device.icon}`,
             scale: [0.09, 0.09],
             opacity: 1,
           }),
@@ -633,15 +762,126 @@ export class LayoutComponent implements OnInit {
     this.vectorSource.addFeatures(segments);
   }
 
-  flash(features: Feature[]) {
-    let flashGeom: Geometry[] = features.map((element) => {
-      return element.getGeometry()!.clone();
-    });
-    this.map.getLayers().forEach((item) => {
-      this.applyPostrender(item, flashGeom);
+  flashMultiple(deviceColorBlinkings: FeatureToBlink[]) {
+    deviceColorBlinkings.forEach((deviceItem) => {
+      this.flashOne(deviceItem.featureId, deviceItem.deviceColorBlinking);
     });
   }
-  private applyPostrender(layer: any, flashGeom: Geometry[]) {
+
+  flashOne(
+    featureId: string,
+    color: string = '255,255,0',
+    intervalDuration: number = 500
+  ) {
+    const feature = this.getFeatureById(featureId);
+    if (feature) {
+      if (this.flashIntervals.has(featureId)) {
+        const currentDataInterval = this.flashIntervals.get(featureId);
+        const colorList: string[] = currentDataInterval.color;
+
+        if (colorList.includes(color)) return;
+
+        colorList.push(color);
+
+        this.stopFlashing(featureId);
+
+        let currentIndex = 0;
+        const intervalId = setInterval(() => {
+          let flashGeom: Geometry = feature.getGeometry()!.clone();
+
+          const currentColor = colorList[currentIndex];
+          this.map.getLayers().forEach((item) => {
+            this.applyPostrender(item, flashGeom, currentColor);
+          });
+
+          currentIndex = (currentIndex + 1) % colorList.length;
+        }, intervalDuration);
+
+        this.flashIntervals.set(featureId, { intervalId, color: colorList });
+      } else {
+        const colorList = [color];
+        let currentIndex = 0;
+
+        const intervalId = setInterval(() => {
+          let flashGeom: Geometry = feature.getGeometry()!.clone();
+
+          const currentColor = colorList[currentIndex];
+          this.map.getLayers().forEach((item) => {
+            this.applyPostrender(item, flashGeom, currentColor);
+          });
+
+          currentIndex = (currentIndex + 1) % colorList.length;
+        }, intervalDuration);
+
+        this.flashIntervals.set(featureId, { intervalId, color: colorList });
+      }
+    }
+  }
+  stopFlashing(featureId: string, colorToRemove?: string) {
+    console.log(featureId);
+    const intervalData = this.flashIntervals.get(String(featureId));
+
+    if (intervalData) {
+      const colorList: string[] = intervalData.color;
+
+      if (colorToRemove) {
+        const colorIndex = colorList.indexOf(colorToRemove);
+
+        if (colorIndex > -1) {
+          colorList.splice(colorIndex, 1);
+        }
+      }
+
+      if (colorList.length === 0) {
+        clearInterval(intervalData.intervalId);
+        this.flashIntervals.delete(featureId);
+      } else {
+        this.restartFlashing(featureId, colorList, intervalData.intervalId);
+      }
+    }
+  }
+
+  restartFlashing(
+    featureId: string,
+    colorList: string[],
+    currentIntervalId: any
+  ) {
+    clearInterval(currentIntervalId);
+
+    let currentIndex = 0;
+
+    const newIntervalId = setInterval(() => {
+      const feature = this.getFeatureById(featureId);
+      if (feature) {
+        let flashGeom: Geometry = feature.getGeometry()!.clone();
+
+        const currentColor = colorList[currentIndex];
+        this.map.getLayers().forEach((item) => {
+          this.applyPostrender(item, flashGeom, currentColor);
+        });
+        currentIndex = (currentIndex + 1) % colorList.length;
+      }
+    }, 500);
+    this.flashIntervals.set(String(featureId), {
+      intervalId: newIntervalId,
+      color: colorList,
+    });
+  }
+
+  private clearAllIntervals(): void {
+    this.flashIntervals.forEach((intervalData, featureId) => {
+      console.log(intervalData.intervalId);
+      clearInterval(intervalData.intervalId);
+    });
+    console.log(this.flashIntervals);
+    this.flashIntervals.clear(); // Clear the map after all intervals are cleared
+  }
+
+  private applyPostrender(
+    layer: any,
+    flashGeom: Geometry,
+    color: string = '255,255,0'
+  ) {
     if (layer instanceof Tile) {
       const start = Date.now();
 
@@ -660,17 +900,18 @@ export class LayoutComponent implements OnInit {
           image: new CircleStyle({
             radius: radius,
             stroke: new Stroke({
-              color: 'rgba(255, 0, 0, ' + opacity + ')',
+              color: `rgba(${color}, ${opacity})`,
               width: 0.25 + opacity,
             }),
           }),
         });
         vectorContext.setStyle(style);
-        for (let x = 0; x < flashGeom.length; x++) {
-          vectorContext.drawGeometry(flashGeom[x]);
-        }
+        vectorContext.drawGeometry(flashGeom);
+
         this.map.render();
       });
+
+      this.map.render();
     }
   }
 
@@ -782,7 +1023,7 @@ export class LayoutComponent implements OnInit {
                 anchorYUnits: 'pixels',
                 scale: [0.09, 0.09],
                 opacity: 1,
-                src: `http://localhost:3000/images/202402131344594684.png`,
+                src: `${environment.imageStaticUrl}202402131343307751.png`,
               }),
             })
           );
@@ -793,13 +1034,14 @@ export class LayoutComponent implements OnInit {
     });
   }
 
-  @HostListener('wheel', ['$event'])
-  onScroll(event: Event) {
-    this.scroll = true;
-    clearTimeout(this.timeout);
-    this.timeout = setTimeout(() => {
-      this.flash(this.endFeature);
-      this.scroll = false;
-    }, 300);
+  getFeatureById(id: string): Feature | null {
+    let foundFeature: Feature | null = null;
+
+    this.vectorSource.forEachFeature((feature) => {
+      if (feature.get('id') == id) {
+        foundFeature = feature;
+      }
+    });
+    return foundFeature;
   }
 }

@@ -83,4 +83,14 @@ export class ApicallService {
     const url = environment.backUrl + '/message/checkStatuses/';
     return this.http.post<any>(url, { phoneNumbers });
   }
+
+  sendStopAlertMessage(phoneNumber: string, alertType: string) {
+    const url =
+      environment.backUrl +
+      '/message/stopAlert/' +
+      alertType +
+      '/' +
+      phoneNumber;
+    return this.http.get<any>(url);
+  }
 }

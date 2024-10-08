@@ -1,3 +1,4 @@
+import { DeviceColorBlinking } from './DeviceColorBlinking';
 import { DeviceStatus } from './DeviceStatus';
 import { Locate } from './Locate';
 
@@ -14,4 +15,10 @@ export class Device {
   limiteBD?: string;
   blinkLimites?: boolean;
   blinkSeuil?: boolean;
+  blinkCredit?: boolean;
+}
+
+export interface FeatureToBlink {
+  featureId: string;
+  deviceColorBlinking: DeviceColorBlinking;
 }
