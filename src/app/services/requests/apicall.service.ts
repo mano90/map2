@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { Device } from 'src/app/classes/Device';
-import { HistoryDataFilter } from 'src/app/classes/HistoryDataFilter';
+import { HistoryData, HistoryDataFilter } from 'src/app/classes/HistoryData';
 import { Locate } from 'src/app/classes/Locate';
 import { environment } from 'src/environments/environment';
 type ServiceOSRM = 'route' | 'nearest' | 'table' | 'match' | 'trip' | 'tile';
@@ -55,9 +55,9 @@ export class ApicallService {
     return this.http.post<any[]>(url, data);
   }
 
-  updateSeuilMultiple(ids: number[], seuil: number) {
+  updateSeuilMultiple(deviceNumbers: number[], seuil: number) {
     const url = environment.backUrl + '/device/updateMultipleSeuil';
-    return this.http.post<any[]>(url, { ids, seuil });
+    return this.http.post<any[]>(url, { deviceNumbers, seuil });
   }
 
   getRoute(
@@ -75,13 +75,18 @@ export class ApicallService {
     const url = environment.backUrl + '/history/getByFilter';
     return this.http.post<Locate[]>(url, data);
   }
-  getStatus(id: number) {
-    const url = environment.backUrl + '/message/checkStatus/' + id;
+  getStatus(deviceNumber: number) {
+    const url = environment.backUrl + '/message/checkStatus/' + deviceNumber;
     return this.http.get<any>(url);
   }
-  getStatuses(phoneNumbers: number[]) {
+  getStatuses(deviceNumbers: number[]) {
     const url = environment.backUrl + '/message/checkStatuses/';
-    return this.http.post<any>(url, { phoneNumbers });
+    return this.http.post<any>(url, { deviceNumbers });
+  }
+
+  getHistoryDataByDeviceId(deviceId: number): Observable<HistoryData[]> {
+    const url = environment.backUrl + '/history/getListByDeviceId/' + deviceId;
+    return this.http.get<HistoryData[]>(url);
   }
 
   sendStopAlertMessage(phoneNumber: string, alertType: string) {

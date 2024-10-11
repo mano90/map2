@@ -84,7 +84,10 @@
             {{ column }}
           </th>
           <td mat-cell *matCellDef="let element">
-            <input type="checkbox" [checked]="clickedRows.has(element.id)" />
+            <input
+              type="checkbox"
+              [checked]="clickedRows.has(element.deviceNumber)"
+            />
           </td>
         </ng-template>
         <ng-template #imageTemplate>
@@ -120,7 +123,14 @@
               <mat-icon>description</mat-icon>
             </button>
             <button
-              (click)="checkStatus(element.id)"
+              class="btn updateData3"
+              [routerLink]="['/device-history', element.id]"
+              matTooltip="Historique"
+            >
+              <mat-icon>history</mat-icon>
+            </button>
+            <button
+              (click)="checkStatus(element.deviceNumber)"
               matTooltip="Check status"
               class="btn updateData2"
             >
@@ -135,8 +145,10 @@
       <tr mat-header-row *matHeaderRowDef="columnsToDisplay"></tr>
       <tr
         mat-row
-        (click)="addRow(row.id)"
-        [class.demo-row-is-clicked]="clickedRows.has(row.id) && !isSimpleAdd"
+        (click)="addRow(row.deviceNumber)"
+        [class.demo-row-is-clicked]="
+          clickedRows.has(row.deviceNumber) && !isSimpleAdd
+        "
         *matRowDef="let row; columns: columnsToDisplay"
       ></tr>
 
@@ -175,3 +187,11 @@
     <span>Supprimer</span>
   </button>
 </mat-menu>
+<ngx-spinner
+  bdColor="rgba(51,51,51,0.8)"
+  size="medium"
+  color="#fff"
+  type="ball-scale-multiple"
+>
+  <p style="font-size: 20px; color: white">Loading...</p>
+</ngx-spinner>

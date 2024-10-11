@@ -46,6 +46,8 @@ import {
 } from '@angular/material-moment-adapter';
 import { MY_FORMATS } from './general-settings/general-settings.component';
 import { SocketIoConfig, SocketIoModule } from 'ngx-socket-io';
+import { DeviceHistoryComponent } from './device-history/device-history.component';
+import { FormatCoordinatesPipe } from './format-coordinates.pipe';
 const config: SocketIoConfig = { url: 'http://localhost:3000', options: {} };
 
 @NgModule({
@@ -58,6 +60,8 @@ const config: SocketIoConfig = { url: 'http://localhost:3000', options: {} };
     DeviceSettingsComponent,
     TopChangeDirective,
     SidebarComponent,
+    DeviceHistoryComponent,
+    FormatCoordinatesPipe,
   ],
   imports: [
     BrowserModule,

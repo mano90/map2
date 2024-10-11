@@ -68,9 +68,17 @@ export class EditDeviceComponent implements OnInit {
     if (this.deviceForm.valid) {
       const data: Device = this.deviceForm.value;
       if (this.id) data.id = this.id;
-      this.service.saveDevice(data).subscribe(() => {
-        this.notificationService.autoClose('success', 'Infos ajoutés');
-        this.dialogRef.close('success');
+      this.service.saveDevice(data).subscribe({
+        next: () => {
+          this.notificationService.autoClose('success', 'Infos ajoutés');
+          this.dialogRef.close('success');
+        },
+        error: () => {
+          this.notificationService.error(
+            "Vérifiez que le numéro téléphone n'est pas utilisé ailleurs"
+          );
+          this.dialogRef.close('success');
+        },
       });
     }
   }

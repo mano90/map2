@@ -1,0 +1,45 @@
+.corps {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #e4e9f7;
+  min-height: 90vh;
+  min-width: 260px;
+}
+
+.row {
+  width: 100%;
+}
+
+button {
+  border: none;
+  border-radius: 5px;
+}
+
+button:hover {
+  background-color: #929598;
+}
+
+.modal-body {
+  justify-content: center;
+}
+
+.modal-footer {
+  justify-content: center;
+}
+
+label {
+  margin-top: 0px;
+  margin-left: 20px;
+}
+
+input {
+  /* margin-left: 70px; */
+  border-style: none;
+  width: 130px;
+  padding-left: 10px;
+}
+
+.d-flex {
+  margin-top: 10px;
+}

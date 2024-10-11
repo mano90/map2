@@ -1,0 +1,139 @@
+<div class="corps">
+  <div class="row">
+    <br />
+    <table class="table table-striped table-responsive-sm shadow">
+      <thead class="table-warning">
+        <tr>
+          <th>Poste</th>
+          <th>Heure D&eacute;but</th>
+          <th>Dur&eacute;e</th>
+          <th>Date</th>
+          <th>Multiplicit&eacute;</th>
+        </tr>
+      </thead>
+      <tbody *ngFor="let poste of PosteList; let i = index">
+        <tr>
+          <td>{{ poste.Poste }}</td>
+          <ng-container *ngIf="showDate">
+            <td>{{ currentTime[i] }}</td>
+          </ng-container>
+          <td>{{ currentTimer[i] }}</td>
+          <ng-container *ngIf="showDate">
+            <td>{{ currentTime[i] }}</td>
+            <td>{{ currentMulti[i] }}</td>
+          </ng-container>
+          <td>
+            <button
+              type="button"
+              [disabled]="playButtonClicked[i]"
+              (click)="play(i)"
+            >
+              Play
+            </button>
+            <button
+              type="button"
+              (click)="startTimer(i)"
+              [disabled]="isRunning"
+              style="margin-left: 15px"
+            >
+              startTimer
+            </button>
+            <button
+              type="button"
+              (click)="pauseTimer(i)"
+              [disabled]="!isRunning"
+            >
+              pauseTimer
+            </button>
+            <button
+              type="button"
+              data-bs-toggle="modal"
+              data-bs-target="#staticBackdrop"
+              (click)="stopTimer(i)"
+              style="margin-left: 15px"
+            >
+              modal
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Modal -->
+    <div
+      class="modal fade"
+      id="staticBackdrop"
+      data-bs-backdrop="static"
+      data-bs-keyboard="false"
+      tabindex="-1"
+      aria-labelledby="staticBackdropLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="staticBackdropLabel">Caisse</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <form [formGroup]="ConnexionsForm">
+              <div class="row">
+                <input
+                  type="text"
+                  formControlName="Poste"
+                  style="margin-left: 100px"
+                  readonly
+                />
+              </div>
+              <div class="d-flex">
+                <label for="">Date :</label>
+                <input type="text" formControlName="Date" readonly />
+              </div>
+              <div class="d-flex">
+                <label for="">Heure D&eacute;but :</label>
+                <input type="text" formControlName="Heure_Debut" readonly />
+              </div>
+              <div class="d-flex">
+                <label for="">Dur&eacute;e :</label>
+                <input type="text" formControlName="Duree" readonly />
+              </div>
+              <div class="d-flex">
+                <label for="">Multiplicite :</label>
+                <input type="text" formControlName="Multi" readonly />
+              </div>
+              <div class="d-flex">
+                <label for="">Tarif :</label>
+                <input
+                  type="text"
+                  formControlName="Prix"
+                  id="Tarif"
+                  name="Tarif"
+                  value="30"
+                  readonly
+                />
+              </div>
+              <div class="d-flex">
+                <label for="">Montant :</label>
+                <input type="text" formControlName="Montant" readonly />
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-primary"
+              data-bs-dismiss="modal"
+            >
+              Enregistrer
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

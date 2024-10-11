@@ -1,0 +1,97 @@
+.error {
+  border-color: red;
+}
+
+.demo-table {
+  width: 100%;
+}
+.demo-row-is-clicked {
+  font-weight: bold;
+}
+.header {
+  background-color: #445c74 !important;
+  color: rgb(228, 228, 228);
+  font-weight: bolder;
+}
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+.headerImage {
+  width: 50px;
+  height: 50px;
+  margin-right: 10px;
+}
+.btn-header {
+  background-color: transparent;
+  color: #efefef;
+  width: 150px;
+  display: inline !important;
+}
+.params {
+  float: right;
+  color: white !important;
+  margin-top: 5px;
+  margin-right: 50px;
+}
+.btn-header:hover {
+  border: 1px solid white;
+}
+
+header .title {
+  font-size: 28px;
+  color: #efefef;
+}
+header {
+  background-color: #282a2d;
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+.custom-card {
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+}
+.card-header {
+  padding: 10px;
+  font-size: 18px;
+  font-weight: 500;
+  color: #282a2d;
+}
+.btn {
+  margin-right: 5px;
+}
+.mat-mdc-form-field {
+  font-size: 14px;
+  width: 100%;
+}
+
+.custom-btn {
+  position: fixed;
+  bottom: 50px;
+  right: 50px;
+  color: #fff;
+  background-color: var(--primary-color);
+  border: none;
+  border-radius: 0.25rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  text-align: center;
+  text-decoration: none;
+  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out,
+    border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.custom-btn:hover {
+  color: #fff;
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+.image-form {
+  width: 50px;
+}
+.edited {
+  background-color: rgb(238, 116, 2);
+}

@@ -1,8 +1,10 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import Swal from 'sweetalert2';
+import { Socket } from 'ngx-socket-io';
+import { NgxSpinnerModule, NgxSpinnerService } from 'ngx-spinner';
 
 export const MY_FORMATS = {
   parse: {
@@ -38,6 +40,7 @@ import { Device } from '../classes/Device';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { EditDeviceComponent } from '../modals/edit-device/edit-device.component';
 import { NotificationService } from '../services/notification/notification.service';
+import { Subject, debounceTime, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-general-settings',
@@ -63,9 +66,10 @@ import { NotificationService } from '../services/notification/notification.servi
     MatPaginatorModule,
     MatSortModule,
     MatDialogModule,
+    NgxSpinnerModule,
   ],
 })
-export class GeneralSettingsComponent implements OnInit {
+export class GeneralSettingsComponent implements OnInit, OnDestroy {
   @ViewChild(MatPaginator) paginator: MatPaginator;
   @ViewChild(MatSort) sort: MatSort;
   displayedColumns: string[] = [
@@ -90,10 +94,15 @@ export class GeneralSettingsComponent implements OnInit {
   ];
   dataSource: MatTableDataSource<Device>;
   clickedRows = new Set<number>();
+  private socketChanges$: Subject<void> = new Subject<void>();
+  private onDestroy$: Subject<void> = new Subject<void>();
+
   constructor(
     private service: ApicallService,
     private notificationService: NotificationService,
-    public dialog: MatDialog
+    public dialog: MatDialog,
+    private spinner: NgxSpinnerService,
+    private socket: Socket
   ) {}
 
   alertFormValues(formGroup: FormGroup) {
@@ -109,20 +118,32 @@ export class GeneralSettingsComponent implements OnInit {
     }
   }
   ngOnInit(): void {
+    this.socket.connect();
     this.getAllDevice();
+
+    this.socketChanges$
+      .pipe(debounceTime(1000), takeUntil(this.onDestroy$))
+      .subscribe(() => {
+        this.getAllDevice();
+        this.spinner.hide();
+      });
+
+    this.socket.on('reloadDeviceList', () => {
+      this.spinner.show();
+      this.socketChanges$.next();
+    });
   }
 
-  addRow(id: number) {
+  addRow(deviceNumber: number) {
     if (!this.isSimpleAdd) {
-      if (this.clickedRows.has(id)) {
-        this.clickedRows.delete(id);
-      } else this.clickedRows.add(id);
+      if (this.clickedRows.has(deviceNumber)) {
+        this.clickedRows.delete(deviceNumber);
+      } else this.clickedRows.add(deviceNumber);
     }
   }
 
   getAllDevice() {
     this.service.getAllRawDevice().subscribe((res) => {
-      console.log(res);
       this.dataSource = new MatTableDataSource(res);
       this.dataSource.paginator = this.paginator;
       this.dataSource.sort = this.sort;
@@ -167,27 +188,37 @@ export class GeneralSettingsComponent implements OnInit {
       const formData = new FormData();
       formData.append('image', file);
       this.service.changeIcon(deviceId, formData).subscribe(() => {
-        this.getAllDevice();
         this.notificationService.autoClose('success', 'Modifié');
+        this.getAllDevice();
       });
     }
   }
 
   changeStatusMultiple() {
-    const ids = Array.from(this.clickedRows.values());
+    const deviceNumbers = Array.from(this.clickedRows.values());
     this.notificationService.input().then((response) => {
-      this.service.updateSeuilMultiple(ids, +response.value).subscribe(() => {
-        this.getAllDevice();
-        this.notificationService.autoClose('success', 'Modifié');
-      });
+      this.service
+        .updateSeuilMultiple(deviceNumbers, +response.value)
+        .subscribe(() => {
+          this.getAllDevice();
+          this.clickedRows.clear();
+          this.notificationService.autoClose('success', 'Modifié');
+        });
     });
   }
   chekStatusMultiple() {
-    const ids = Array.from(this.clickedRows.values());
-    this.service.getStatuses(ids).subscribe((res) => console.log(res));
+    const deviceNumbers = Array.from(this.clickedRows.values());
+    this.service
+      .getStatuses(deviceNumbers)
+      .subscribe(() => this.clickedRows.clear());
   }
 
-  checkStatus(id: number) {
-    this.service.getStatus(id).subscribe((res) => console.log(res));
+  checkStatus(deviceNumber: number) {
+    this.service.getStatus(deviceNumber).subscribe((res) => console.log(res));
+  }
+
+  ngOnDestroy(): void {
+    this.onDestroy$.next();
+    this.onDestroy$.complete();
   }
 }

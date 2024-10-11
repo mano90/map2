@@ -9,9 +9,9 @@ import {
 import * as _moment from 'moment';
 import { default as _rollupMoment } from 'moment';
 import { DeviceStatus } from '../classes/DeviceStatus';
-import { HistoryDataFilter } from '../classes/HistoryDataFilter';
 import { ApicallService } from '../services/requests/apicall.service';
 import { Locate } from '../classes/Locate';
+import { HistoryDataFilter } from '../classes/HistoryData';
 const moment = _rollupMoment || _moment;
 
 @Component({

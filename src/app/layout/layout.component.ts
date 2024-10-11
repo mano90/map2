@@ -7,8 +7,6 @@ import {
 } from '@angular/core';
 import { Map as OlMap } from 'ol';
 import View from 'ol/View';
-import TileLayer from 'ol/layer/Tile';
-import OSM from 'ol/source/OSM';
 import VectorSource from 'ol/source/Vector';
 import Overlay from 'ol/Overlay';
 
@@ -30,7 +28,6 @@ import { easeOut } from 'ol/easing';
 import Point from 'ol/geom/Point';
 import LineString from 'ol/geom/LineString';
 import { getDistance } from 'ol/sphere';
-import { Time } from '@angular/common';
 import { Geometry, Polygon } from 'ol/geom';
 import { Draw, defaults as defaultInteractions } from 'ol/interaction';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
@@ -39,7 +36,7 @@ import { Locate } from '../classes/Locate';
 import { CoordinateFormatterService } from '../services/coordinate-formatter.service';
 import { RtaService } from '../components/rta/rta.service';
 import { ApicallService } from '../services/requests/apicall.service';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, filter } from 'rxjs';
 import { createBox } from 'ol/interaction/Draw';
 import { NotificationService } from '../services/notification/notification.service';
 import { BackgroundMapService } from '../services/map/background-map.service';
@@ -83,7 +80,6 @@ export class LayoutComponent implements OnInit {
   vectorSource: VectorSource = new VectorSource();
   vectorLayer: VectorLayer<any> = new VectorLayer();
   previousData: { data: Locate[]; showSegment: boolean };
-
   duration: number = 3000;
   scroll = false;
   timeout: any;
@@ -107,7 +103,7 @@ export class LayoutComponent implements OnInit {
     private socket: Socket
   ) {}
 
-  sendMessage(message: string) {
+sendMessage(message: string) {
     this.socket.emit('message', message);
   }
 
@@ -115,18 +111,16 @@ export class LayoutComponent implements OnInit {
     window.location.reload();
   }
 
+
   ngOnInit(): void {
     this.socket.connect();
-
-    this.socket.on('message', (data: string) => {
-      console.log('Message received from server: ' + data);
-      // Handle the received message in your Angular application
+    this.socket.on('alert', (data: any) => {
+      console.log('reloaded');
+      this.getAllData();
     });
-    this.sendMessage('Test');
     this.backgroundLayers = this.backgroundMapService.getBackgroundLayers();
 
     this.contentPopup = document.getElementById('popup-content');
-    // this.spinner.show();
 
     const container = document.getElementById('popup');
     this.overlay = new Overlay({
@@ -191,7 +185,6 @@ export class LayoutComponent implements OnInit {
 
     this.getAllData();
     this.showData.subscribe((res) => {
-      this.spinner.show();
       this.pasteData(res.data, res.showSegment);
       this.map.on('click', (event) => {
         const feature = this.map.forEachFeatureAtPixel(
@@ -227,7 +220,6 @@ export class LayoutComponent implements OnInit {
           } else this.overlay.setPosition(undefined);
         }
       });
-      this.spinner.hide();
     });
   }
   addMovingMarker(points: number[][]): void {
@@ -261,9 +253,15 @@ export class LayoutComponent implements OnInit {
   }
 
   getAllData() {
-    this.service.getAllDevices().subscribe((res) => {
-      this.previousData = this.showData.getValue();
-      this.showData.next({ data: res, showSegment: false });
+    this.spinner.show();
+    this.service.getAllDevices().subscribe({
+      next: (res) => {
+        this.previousData = this.showData.getValue();
+        this.showData.next({ data: res, showSegment: false });
+      },
+      complete: () => {
+        this.spinner.hide();
+      },
     });
   }
   updateBackgroundLayer(newLayer: any) {
@@ -291,28 +289,6 @@ export class LayoutComponent implements OnInit {
     });
   }
 
-  // this._rta.getListeLocalisation().subscribe((res: Locate[]) => {
-  //   this.allLocates = res;
-  //   this.mapFunction(this.getSegments(this.allLocates));
-  // });
-  // this._rta
-  //   .getServerSentEvent('http://localhost:3000/getData')
-  //   .subscribe((data) => {
-  //     const da: any = JSON.parse(data.data);
-  //     // da.msg.forEach((element) => {
-  //     //   console.log(element.after);
-  //     // });
-
-  //     const filtredId: number[] = da.msg.map((item) => {
-  //       return item.after.id;
-  //     });
-  //     console.log(filtredId);
-  //     this._rta.getItemsById(filtredId).subscribe((res: Locate[]) => {
-  //       // console.log(res);
-  //       this.allLocates.push(...res);
-  //       this.pasteData();
-  //     });
-  //   });
   generateSquareContent(id: string): HTMLElement {
     const deplacement = this.formatButton(document.createElement('button'));
     deplacement.innerHTML = 'Changer';
@@ -628,6 +604,7 @@ export class LayoutComponent implements OnInit {
           }),
         })
       );
+      this.flash([feat]);
       points.push(feat);
     }
     return points;
@@ -697,6 +674,7 @@ export class LayoutComponent implements OnInit {
           })
         );
         if (d === orderedDataLength) {
+          feat.set('last', true);
           this.endFeature.push(feat);
         }
         d++;
@@ -761,6 +739,7 @@ export class LayoutComponent implements OnInit {
   mapFunction(segments: Feature[]) {
     this.vectorSource.addFeatures(segments);
   }
+
 
   flashMultiple(deviceColorBlinkings: FeatureToBlink[]) {
     deviceColorBlinkings.forEach((deviceItem) => {
@@ -866,6 +845,16 @@ export class LayoutComponent implements OnInit {
       intervalId: newIntervalId,
       color: colorList,
     });
+  flash(features: Feature[]) {
+    // setInterval(() => {
+    //   let flashGeom: Geometry[] = features.map((element) => {
+    //     return element.getGeometry()!.clone();
+    //   });
+    //   this.map.getLayers().forEach((item) => {
+    //     this.applyPostrender(item, flashGeom);
+    //   });
+    //   console.log('begin');
+    // }, 300);
   }
 
   private clearAllIntervals(): void {

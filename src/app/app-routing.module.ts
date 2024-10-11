@@ -4,6 +4,7 @@ import { GeneralSettingsComponent } from './general-settings/general-settings.co
 import { LayoutComponent } from './layout/layout.component';
 import { DeviceSettingsComponent } from './device-settings/device-settings.component';
 import { DeviceHistoryComponent } from './device-history/device-history.component';
+import { AccueilComponent } from './accueil/accueil.component';
 
 const routes: Routes = [
   { path: '', component: LayoutComponent },
@@ -14,6 +15,7 @@ const routes: Routes = [
   },
   { path: 'device-history/:id', component: DeviceHistoryComponent },
   { path: 'device', component: DeviceSettingsComponent },
+  { path: 'accueil', component: AccueilComponent },
 ];
 
 @NgModule({
