@@ -6,4 +6,5 @@
 export const environment = {
   production: false,
   backUrl: "http://localhost:3000",
+  imageStaticUrl: 'http://localhost:3000/images/'
 };
