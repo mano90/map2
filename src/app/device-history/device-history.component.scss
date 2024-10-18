@@ -8,11 +8,7 @@
 .demo-row-is-clicked {
   font-weight: bold;
 }
-.header {
-  background-color: #445c74 !important;
-  color: rgb(228, 228, 228);
-  font-weight: bolder;
-}
+
 :host {
   display: flex;
   flex-direction: column;
@@ -26,8 +22,10 @@
 .btn-header {
   background-color: transparent;
   color: #efefef;
-  width: 150px;
-  display: inline !important;
+  // width: 120px;
+  // display: inline !important;
+  // font-size: 15px;
+
 }
 .params {
   float: right;
@@ -95,3 +93,12 @@ header {
 .edited {
   background-color: rgb(238, 116, 2);
 }
+
+.background-container {
+  background-image: url('../../assets/map_background.jpg');
+  background-size: cover;
+  background-position: center;
+  height: 100%;
+}
+
+

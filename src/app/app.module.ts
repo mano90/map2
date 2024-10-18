@@ -1,4 +1,4 @@
-import { HttpClientModule } from '@angular/common/http';
+import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
 import { NgModule, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { CommonModule, DecimalPipe } from '@angular/common';
@@ -48,6 +48,8 @@ import { MY_FORMATS } from './general-settings/general-settings.component';
 import { SocketIoConfig, SocketIoModule } from 'ngx-socket-io';
 import { DeviceHistoryComponent } from './device-history/device-history.component';
 import { FormatCoordinatesPipe } from './format-coordinates.pipe';
+import { ErrorInterceptorService } from './interceptors/error-interceptor.service';
+import { AlertHistoryComponent } from './alert-history/alert-history.component';
 const config: SocketIoConfig = { url: 'http://localhost:3000', options: {} };
 
 @NgModule({
@@ -62,6 +64,7 @@ const config: SocketIoConfig = { url: 'http://localhost:3000', options: {} };
     SidebarComponent,
     DeviceHistoryComponent,
     FormatCoordinatesPipe,
+    AlertHistoryComponent,
   ],
   imports: [
     BrowserModule,
@@ -100,6 +103,11 @@ const config: SocketIoConfig = { url: 'http://localhost:3000', options: {} };
       deps: [MAT_DATE_LOCALE, MAT_MOMENT_DATE_ADAPTER_OPTIONS],
     },
     { provide: MAT_DATE_FORMATS, useValue: MY_FORMATS },
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: ErrorInterceptorService,
+      multi: true,
+    },
   ],
   bootstrap: [AppComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],

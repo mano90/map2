@@ -4,7 +4,7 @@ import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { ApicallService } from '../services/requests/apicall.service';
 import { HistoryData } from '../classes/HistoryData';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 @Component({
   selector: 'app-device-history',
@@ -15,21 +15,37 @@ export class DeviceHistoryComponent implements OnInit {
   dataSource: MatTableDataSource<HistoryData>;
   @ViewChild(MatPaginator) paginator: MatPaginator;
   @ViewChild(MatSort) sort: MatSort;
+  filterType: string = '';
   displayedColumns: string[] = [
     'name',
     'date',
-    'status',
     'seuil',
     'deviceNumber',
-    'icon',
     'limiteHG',
     'limiteBD',
+    'blinkLimites',
+    'blinkSeuil',
+    'blinkCredit',
   ];
-  constructor(private service: ApicallService, private route: ActivatedRoute) {}
+  displayedColumnsTwo: string[] = [
+    'name',
+    'date',
+    'seuil',
+    'status',
+    'deviceNumber',
+    'icon',
+  ];
+  constructor(
+    private service: ApicallService,
+    private route: ActivatedRoute,
+    private router: Router
+  ) {}
   ngOnInit(): void {
     this.route.paramMap.subscribe((params) => {
       const id = +params.get('id');
-      if (id) this.getHistoryDeviceData(id);
+      const filter = params.get('filter');
+      this.filterType = filter;
+      if (id) this.getHistoryDeviceData(id, filter);
     });
   }
   applyFilter(event: Event) {
@@ -41,21 +57,25 @@ export class DeviceHistoryComponent implements OnInit {
     }
   }
 
-  private getHistoryDeviceData(id: number) {
+  private getHistoryDeviceData(id: number, filter: string) {
     this.service.getHistoryDataByDeviceId(id).subscribe((res) => {
-      this.addChangedProperty(res);
-      console.log(res);
-      this.dataSource = new MatTableDataSource(res);
+      const toShow = this.addChangedProperty(res, filter);
+      console.log(toShow);
+      this.dataSource = new MatTableDataSource(toShow);
       this.dataSource.paginator = this.paginator;
       this.dataSource.sort = this.sort;
     });
   }
 
-  private addChangedProperty(data: HistoryData[]): void {
+  private addChangedProperty(
+    data: HistoryData[],
+    filter: string
+  ): HistoryData[] {
+    if (data.length === 1) return data;
+    const historyToReturn: HistoryData[] = [];
     for (let i = 1; i < data.length; i++) {
       const prevObj = data[i - 1] as any;
       const currentObj = data[i] as any;
-      const changes: string[] = [];
 
       for (const key in currentObj) {
         if (
@@ -63,16 +83,41 @@ export class DeviceHistoryComponent implements OnInit {
           key !== 'id' &&
           prevObj[key] !== currentObj[key]
         ) {
-          changes.push(key);
+          if (filter === 'alerte') {
+            if (['blinkLimites', 'blinkSeuil', 'blinkCredit'].includes(key)) {
+              historyToReturn.push(prevObj);
+              historyToReturn.push(currentObj);
+            }
+          } else {
+            if (
+              [
+                'name',
+                'date',
+                'status',
+                'seuil',
+                'deviceNumber',
+                'icon',
+              ].includes(key)
+            ) {
+              historyToReturn.push(prevObj);
+              historyToReturn.push(currentObj);
+            }
+          }
         }
       }
-
-      prevObj['changes'] = changes;
     }
+    return historyToReturn.filter(
+      (obj, index, self) =>
+        index ===
+        self.findIndex((o) => JSON.stringify(o) === JSON.stringify(obj))
+    );
   }
 
   updatedColumn(columnName: string, changes: string[]): boolean {
     if (changes) if (changes.includes(columnName)) return true;
     return false;
+  }
+  redirectMap() {
+    this.router.navigate(['/']);
   }
 }

@@ -22,6 +22,12 @@ export interface HistoryData {
 
   device?: Device;
   changes?: string[];
+
+  blinkLimites?: boolean;
+
+  blinkSeuil?: boolean;
+
+  blinkCredit?: boolean;
 }
 
 export interface HistoryDataFilter {

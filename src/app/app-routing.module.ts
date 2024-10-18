@@ -13,7 +13,7 @@ const routes: Routes = [
     path: 'parametres',
     component: GeneralSettingsComponent,
   },
-  { path: 'device-history/:id', component: DeviceHistoryComponent },
+  { path: 'device-history/:id/:filter', component: DeviceHistoryComponent },
   { path: 'device', component: DeviceSettingsComponent },
   { path: 'accueil', component: AccueilComponent },
 ];

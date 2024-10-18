@@ -1,170 +1,234 @@
-<header>
-  <div class="title">
-    <img class="headerImage" src="assets/logo.png" alt="" />
-    Tracking devices
-    <button
-      class="btn btn-outline btn-header"
-      [routerLink]="['/']"
-      mat-menu-item
-    >
-      ACCUEIL
-    </button>
-    <button
-      class="btn btn-outline btn-header params"
-      mat-button
-      [matMenuTriggerFor]="belowMenu"
-    >
-      Manorintsoa
-      <mat-icon>keyboard_arrow_down</mat-icon>
-    </button>
-    <mat-menu #belowMenu="matMenu" yPosition="below">
-      <button
-        [routerLink]="['/parametres']"
-        routerLinkActive="router-link-active"
-        mat-menu-item
-      >
-        Parametres
+<div class="background-container">
+  <header>
+    <div class="title">
+      <img class="headerImage" src="assets/logo.png" alt="" />
+      Tracking devices
+
+      <button class="btn btn-outline btn-header" (click)="redirectMap()">
+        ACCUEIL
       </button>
-      <button mat-menu-item>Deconnexion</button>
-    </mat-menu>
-  </div>
-</header>
-
-<br />
-<div class="container">
-  <h2>Matériels</h2>
-  <br />
-  <button
-    [disabled]="isSimpleAdd"
-    mat-raised-button
-    (click)="simpleSelection()"
-  >
-    Simple selection
-  </button>
-  <button
-    [disabled]="!isSimpleAdd"
-    mat-raised-button
-    (click)="multipleSelection()"
-  >
-    Selection Multiple
-  </button>
-
-  <mat-form-field>
-    <mat-label>Filter</mat-label>
-    <input
-      matInput
-      (keyup)="applyFilter($event)"
-      placeholder="Ex. Mia"
-      #input
-    />
-  </mat-form-field>
-  <div class="mat-elevation-z8">
-    <table mat-table [dataSource]="dataSource" class="demo-table" matSort>
-      <ng-container
-        [matColumnDef]="column"
-        *ngFor="let column of displayedColumns"
+      <button
+        class="btn btn-outline btn-header params"
+        mat-button
+        [matMenuTriggerFor]="belowMenu"
       >
-        <ng-container *ngIf="column !== 'checkbox'; else checkboxTemplate">
-          <ng-container *ngIf="column !== 'action'; else actionTemplate">
-            <ng-container *ngIf="column !== 'icon'; else imageTemplate">
-              <th
-                mat-header-cell
-                *matHeaderCellDef
-                mat-sort-header
-                class="header"
-              >
-                {{ column }}
-              </th>
-              <td mat-cell *matCellDef="let element">{{ element[column] }}</td>
+        Manorintsoa
+        <mat-icon>keyboard_arrow_down</mat-icon>
+      </button>
+      <mat-menu #belowMenu="matMenu" yPosition="below">
+        <button
+          [routerLink]="['/parametres']"
+          routerLinkActive="router-link-active"
+          mat-menu-item
+        >
+          Parametres
+        </button>
+        <button mat-menu-item>Deconnexion</button>
+      </mat-menu>
+    </div>
+  </header>
+
+  <br />
+
+  <div class="container">
+    <h2>Matériels</h2>
+
+    <button (click)="createDevice()" class="btn btn-success btn-lg">
+      Nouveau matériel
+    </button>
+    <br />
+    <br />
+    <br />
+    <button
+      [ngClass]="{ disabledButton: isSimpleAdd }"
+      [disabled]="isSimpleAdd"
+      mat-raised-button
+      (click)="simpleSelection()"
+    >
+      Selection simple
+    </button>
+    <button
+      [ngClass]="{ disabledButton: !isSimpleAdd }"
+      [disabled]="!isSimpleAdd"
+      mat-raised-button
+      (click)="multipleSelection()"
+    >
+      Selection Multiple
+    </button>
+    <br />
+    <br />
+    <mat-form-field subscriptSizing="dynamic">
+      <mat-label>Filtre</mat-label>
+      <input
+        matInput
+        (keyup)="applyFilter($event)"
+        placeholder="Ex. Mia"
+        #input
+      />
+    </mat-form-field>
+    <div class="mat-elevation-z8">
+      <table mat-table [dataSource]="dataSource" class="demo-table" matSort>
+        <ng-container
+          [matColumnDef]="column"
+          *ngFor="let column of displayedColumns"
+        >
+          <ng-container *ngIf="column !== 'checkbox'; else checkboxTemplate">
+            <ng-container *ngIf="column !== 'action'; else actionTemplate">
+              <ng-container *ngIf="column !== 'icon'; else imageTemplate">
+                <th
+                  mat-header-cell
+                  *matHeaderCellDef
+                  mat-sort-header
+                  class="header"
+                >
+                  {{ column }}
+                </th>
+                <td mat-cell *matCellDef="let element">
+                  {{ element[column] }}
+                </td>
+              </ng-container>
             </ng-container>
           </ng-container>
+          <ng-template #checkboxTemplate>
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              mat-sort-header
+              class="header"
+            >
+              {{ column }}
+            </th>
+            <td mat-cell *matCellDef="let element">
+              <input
+                type="checkbox"
+                [checked]="clickedRows.has(element.deviceNumber)"
+              />
+            </td>
+          </ng-template>
+          <ng-template #imageTemplate>
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              mat-sort-header
+              class="header"
+            >
+              {{ column }}
+            </th>
+            <td mat-cell *matCellDef="let element">
+              <input
+                class="image-form"
+                type="image"
+                [src]="'http://localhost:3000/images/' + element[column]"
+                alt=""
+              />
+            </td>
+          </ng-template>
+          <ng-template #actionTemplate>
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              mat-sort-header
+              class="header"
+            >
+              {{ column }}
+            </th>
+            <td mat-cell *matCellDef="let element">
+              <button
+                [disabled]="element.status === NEEDCONFIRMATION"
+                (click)="editDevice(element)"
+                matTooltip="Modifier"
+                class="btn updateData5"
+              >
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button
+                [disabled]="element.status === NEEDCONFIRMATION"
+                (click)="changeIcon(element.id)"
+                matTooltip="Changer icon"
+                class="btn updateData"
+              >
+                <mat-icon>description</mat-icon>
+              </button>
+              <button
+                [disabled]="element.status === NEEDCONFIRMATION"
+                class="btn updateData3"
+                [routerLink]="['/device-history', element.id, 'changement']"
+                matTooltip="Historique de changements"
+              >
+                <mat-icon>history</mat-icon>
+              </button>
+              <button
+                [disabled]="element.status === NEEDCONFIRMATION"
+                class="btn updateData6"
+                [routerLink]="['/device-history', element.id, 'alerte']"
+                matTooltip="Historique d'alerte"
+              >
+                <mat-icon>warning</mat-icon>
+              </button>
+              <button
+                [disabled]="element.status === NEEDCONFIRMATION"
+                (click)="checkStatus(element.deviceNumber)"
+                matTooltip="Check status"
+                class="btn updateData2"
+              >
+                <mat-icon>dialpad</mat-icon>
+              </button>
+              <button
+                [disabled]="element.status === NEEDCONFIRMATION"
+                (click)="
+                  changePowerStatus(element.deviceNumber, element.activated)
+                "
+                [matTooltip]="
+                  element.activated ? 'Désactiver courant' : 'Activer courant'
+                "
+                class="btn updateData4"
+              >
+                <mat-icon>{{
+                  element.activated ? "flash_off" : "flash_on"
+                }}</mat-icon>
+              </button>
+              <button
+                [disabled]="element.status === NEEDCONFIRMATION"
+                (click)="activateTrack(element.deviceNumber)"
+                matTooltip="Tracker position"
+                class="btn updateData1"
+              >
+                <mat-icon>track_changes</mat-icon>
+              </button>
+              <button
+                matTooltip="Supprimer"
+                (click)="deleteDevice(element.id)"
+                class="btn btn-danger"
+              >
+                <mat-icon>delete</mat-icon>
+              </button>
+            </td>
+          </ng-template>
         </ng-container>
-        <ng-template #checkboxTemplate>
-          <th mat-header-cell *matHeaderCellDef mat-sort-header class="header">
-            {{ column }}
-          </th>
-          <td mat-cell *matCellDef="let element">
-            <input
-              type="checkbox"
-              [checked]="clickedRows.has(element.deviceNumber)"
-            />
-          </td>
-        </ng-template>
-        <ng-template #imageTemplate>
-          <th mat-header-cell *matHeaderCellDef mat-sort-header class="header">
-            {{ column }}
-          </th>
-          <td mat-cell *matCellDef="let element">
-            <input
-              class="image-form"
-              type="image"
-              [src]="'http://localhost:3000/images/' + element[column]"
-              alt=""
-            />
-          </td>
-        </ng-template>
-        <ng-template #actionTemplate>
-          <th mat-header-cell *matHeaderCellDef mat-sort-header class="header">
-            {{ column }}
-          </th>
-          <td mat-cell *matCellDef="let element">
-            <button
-              (click)="editDevice(element)"
-              matTooltip="Modifier"
-              class="btn updateData"
-            >
-              <mat-icon>edit</mat-icon>
-            </button>
-            <button
-              (click)="changeIcon(element.id)"
-              matTooltip="Changer icon"
-              class="btn updateData1"
-            >
-              <mat-icon>description</mat-icon>
-            </button>
-            <button
-              class="btn updateData3"
-              [routerLink]="['/device-history', element.id]"
-              matTooltip="Historique"
-            >
-              <mat-icon>history</mat-icon>
-            </button>
-            <button
-              (click)="checkStatus(element.deviceNumber)"
-              matTooltip="Check status"
-              class="btn updateData2"
-            >
-              <mat-icon>dialpad</mat-icon>
-            </button>
-            <button matTooltip="Supprimer" class="btn btn-danger">
-              <mat-icon>delete</mat-icon>
-            </button>
-          </td>
-        </ng-template>
-      </ng-container>
-      <tr mat-header-row *matHeaderRowDef="columnsToDisplay"></tr>
-      <tr
-        mat-row
-        (click)="addRow(row.deviceNumber)"
-        [class.demo-row-is-clicked]="
-          clickedRows.has(row.deviceNumber) && !isSimpleAdd
-        "
-        *matRowDef="let row; columns: columnsToDisplay"
-      ></tr>
+        <tr mat-header-row *matHeaderRowDef="columnsToDisplay"></tr>
+        <tr
+          mat-row
+          (click)="addRow(row.deviceNumber)"
+          [class.demo-row-is-clicked]="
+            clickedRows.has(row.deviceNumber) && !isSimpleAdd
+          "
+          *matRowDef="let row; columns: columnsToDisplay"
+        ></tr>
 
-      <tr class="mat-row" *matNoDataRow>
-        <td class="mat-cell" colspan="4">
-          No data matching the filter "{{ input.value }}"
-        </td>
-      </tr>
-    </table>
-    <mat-paginator
-      [pageSizeOptions]="[5, 10, 25, 100]"
-      aria-label="Select page of users"
-    ></mat-paginator>
+        <tr class="mat-row" *matNoDataRow>
+          <td class="mat-cell" colspan="4">
+            No data matching the filter "{{ input.value }}"
+          </td>
+        </tr>
+      </table>
+      <mat-paginator
+        [pageSizeOptions]="[5, 10, 25, 100]"
+        aria-label="Select page of users"
+      ></mat-paginator>
+    </div>
   </div>
 </div>
-<br /><br /><br />
+
 <button
   *ngIf="!isSimpleAdd && clickedRows.size > 0"
   class="custom-btn"

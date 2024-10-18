@@ -78,4 +78,139 @@ export class NotificationService {
       },
     });
   }
+
+  async customInput(): Promise<
+    | {
+        duration: number;
+        frequency: number;
+      }
+    | 0
+  > {
+    let totalSeconds = 0;
+    return Swal.fire({
+      title: 'Entrez le délai de track',
+      html: `
+      <div>
+        <label for="hours">Heures:</label>
+        <input type="number" id="hours" class="swal2-input" min="0" max="23" value="0">
+      </div>
+      <div>
+        <label for="minutes">Minutes:</label>
+        <input type="number" id="minutes" class="swal2-input" min="0" max="59" value="0">
+      </div>
+      <div>
+        <label for="seconds">Secondes:</label>
+        <input type="number" id="seconds" class="swal2-input" min="0" max="59" value="0">
+      </div>
+      `,
+      focusConfirm: false,
+      showCancelButton: true,
+      confirmButtonText: 'Ok',
+      cancelButtonText: 'Annuler',
+      preConfirm: () => {
+        // Cast elements to HTMLInputElement
+        const hours = (document.getElementById('hours') as HTMLInputElement)
+          .value;
+        const minutes = (document.getElementById('minutes') as HTMLInputElement)
+          .value;
+        const seconds = (document.getElementById('seconds') as HTMLInputElement)
+          .value;
+
+        // Validation: Check if any of the values are invalid
+        if (
+          +hours < 0 ||
+          +hours > 23 ||
+          +minutes < 0 ||
+          +minutes > 59 ||
+          +seconds < 0 ||
+          +seconds > 59
+        ) {
+          Swal.showValidationMessage('Veuillez entrer des valeurs valides');
+        }
+
+        // Convert hours, minutes, and seconds to total seconds
+        totalSeconds = +hours * 3600 + +minutes * 60 + +seconds;
+
+        if (totalSeconds <= 0) {
+          Swal.showValidationMessage(
+            'Le délai doit être supérieur à 0 secondes'
+          );
+        }
+
+        return totalSeconds; // Return the total seconds
+      },
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        return Swal.fire({
+          title: 'Entrez la fréquence de track',
+          html: `
+          <div>
+            <label for="hours">Heures:</label>
+            <input type="number" id="hoursTrack" class="swal2-input" min="0" max="23" value="0">
+          </div>
+          <div>
+            <label for="minutes">Minutes:</label>
+            <input type="number" id="minutesTrack" class="swal2-input" min="0" max="59" value="0">
+          </div>
+          <div>
+            <label for="seconds">Secondes:</label>
+            <input type="number" id="secondsTrack" class="swal2-input" min="0" max="59" value="0">
+          </div>
+          `,
+          focusConfirm: false,
+          showCancelButton: true,
+          confirmButtonText: 'Ok',
+          cancelButtonText: 'Annuler',
+          preConfirm: () => {
+            const hoursTrack = (
+              document.getElementById('hoursTrack') as HTMLInputElement
+            ).value;
+            const minutesTrack = (
+              document.getElementById('minutesTrack') as HTMLInputElement
+            ).value;
+            const secondsTrack = (
+              document.getElementById('secondsTrack') as HTMLInputElement
+            ).value;
+
+            // Validation: Check if any of the values are invalid
+            if (
+              +hoursTrack < 0 ||
+              +hoursTrack > 23 ||
+              +minutesTrack < 0 ||
+              +minutesTrack > 59 ||
+              +secondsTrack < 0 ||
+              +secondsTrack > 59
+            ) {
+              Swal.showValidationMessage('Veuillez entrer des valeurs valides');
+            }
+
+            // Convert hours, minutes, and seconds to total seconds
+            const totalSecondsTrack =
+              +hoursTrack * 3600 + +minutesTrack * 60 + +secondsTrack;
+
+            if (totalSecondsTrack <= 0) {
+              Swal.showValidationMessage(
+                'Le délai doit être supérieur à 0 secondes'
+              );
+            }
+
+            if (totalSecondsTrack >= totalSeconds)
+              Swal.showValidationMessage(
+                'La fréquence de track doit être inférieur à la durée du track'
+              );
+            return totalSecondsTrack;
+          },
+        }).then(async (resultTrack) => {
+          if (resultTrack.isConfirmed) {
+            return {
+              duration: Number(result.value),
+              frequency: Number(resultTrack.value),
+            };
+          }
+          return 0;
+        });
+      }
+      return 0;
+    });
+  }
 }

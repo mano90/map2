@@ -31,7 +31,7 @@ import {
 } from '@angular/material/slide-toggle';
 import { CommonModule } from '@angular/common';
 import { MatMenuModule } from '@angular/material/menu';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { HttpClientModule } from '@angular/common/http';
@@ -41,6 +41,7 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { EditDeviceComponent } from '../modals/edit-device/edit-device.component';
 import { NotificationService } from '../services/notification/notification.service';
 import { Subject, debounceTime, takeUntil } from 'rxjs';
+import { DeviceStatus } from '../classes/DeviceStatus';
 
 @Component({
   selector: 'app-general-settings',
@@ -71,6 +72,8 @@ import { Subject, debounceTime, takeUntil } from 'rxjs';
 })
 export class GeneralSettingsComponent implements OnInit, OnDestroy {
   @ViewChild(MatPaginator) paginator: MatPaginator;
+  NEEDCONFIRMATION = DeviceStatus.NEEDCONFIRMATION;
+
   @ViewChild(MatSort) sort: MatSort;
   displayedColumns: string[] = [
     'checkbox',
@@ -93,7 +96,7 @@ export class GeneralSettingsComponent implements OnInit, OnDestroy {
     'status',
   ];
   dataSource: MatTableDataSource<Device>;
-  clickedRows = new Set<number>();
+  clickedRows = new Set<string>();
   private socketChanges$: Subject<void> = new Subject<void>();
   private onDestroy$: Subject<void> = new Subject<void>();
 
@@ -102,7 +105,8 @@ export class GeneralSettingsComponent implements OnInit, OnDestroy {
     private notificationService: NotificationService,
     public dialog: MatDialog,
     private spinner: NgxSpinnerService,
-    private socket: Socket
+    private socket: Socket,
+    private router: Router
   ) {}
 
   alertFormValues(formGroup: FormGroup) {
@@ -134,7 +138,7 @@ export class GeneralSettingsComponent implements OnInit, OnDestroy {
     });
   }
 
-  addRow(deviceNumber: number) {
+  addRow(deviceNumber: string) {
     if (!this.isSimpleAdd) {
       if (this.clickedRows.has(deviceNumber)) {
         this.clickedRows.delete(deviceNumber);
@@ -147,6 +151,18 @@ export class GeneralSettingsComponent implements OnInit, OnDestroy {
       this.dataSource = new MatTableDataSource(res);
       this.dataSource.paginator = this.paginator;
       this.dataSource.sort = this.sort;
+    });
+  }
+
+  activateTrack(deviceNumber: string) {
+    this.notificationService.customInput().then((response) => {
+      if (response !== 0) {
+        this.service
+          .activateTrack(deviceNumber, response.duration, response.frequency)
+          .subscribe((res) => {
+            this.getAllDevice();
+          });
+      }
     });
   }
 
@@ -175,6 +191,17 @@ export class GeneralSettingsComponent implements OnInit, OnDestroy {
     });
   }
 
+  createDevice() {
+    const dialogRef = this.dialog.open(EditDeviceComponent, {
+      data: { edit: false },
+    });
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result === 'success') {
+        this.getAllDevice();
+      }
+    });
+  }
+
   async changeIcon(deviceId: number) {
     const { value: file } = await Swal.fire({
       title: "Changer l'icone",
@@ -194,8 +221,13 @@ export class GeneralSettingsComponent implements OnInit, OnDestroy {
     }
   }
 
+  changePowerStatus(deviceNumber: string, activated: boolean) {
+    this.service.changePowerStatus(deviceNumber, activated).subscribe((res) => {
+      console.log(res);
+    });
+  }
   changeStatusMultiple() {
-    const deviceNumbers = Array.from(this.clickedRows.values());
+    const deviceNumbers = Array.from(this.clickedRows.values()).map(Number);
     this.notificationService.input().then((response) => {
       this.service
         .updateSeuilMultiple(deviceNumbers, +response.value)
@@ -207,18 +239,35 @@ export class GeneralSettingsComponent implements OnInit, OnDestroy {
     });
   }
   chekStatusMultiple() {
-    const deviceNumbers = Array.from(this.clickedRows.values());
+    const deviceNumbers = Array.from(this.clickedRows.values()).map(Number);
     this.service
       .getStatuses(deviceNumbers)
       .subscribe(() => this.clickedRows.clear());
   }
 
-  checkStatus(deviceNumber: number) {
+  checkStatus(deviceNumber: string) {
     this.service.getStatus(deviceNumber).subscribe((res) => console.log(res));
   }
 
   ngOnDestroy(): void {
     this.onDestroy$.next();
     this.onDestroy$.complete();
+  }
+
+  deleteDevice(deviceId: number) {
+    this.notificationService
+      .confirm('Etes vous sur de vouloir supprimer')
+      .then((response) => {
+        if (response.isConfirmed) {
+          this.service.deleteDevice(deviceId).subscribe((res) => {
+            this.notificationService.success('Supprimé');
+            this.getAllDevice();
+          });
+        }
+      });
+  }
+
+  redirectMap() {
+    this.router.navigate(['/']);
   }
 }

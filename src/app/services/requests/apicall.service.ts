@@ -33,6 +33,18 @@ export class ApicallService {
     return this.http.get<Device[]>(url);
   }
 
+  activateTrack(deviceNumber: string, duration: number, frequency: number) {
+    const url =
+      environment.backUrl +
+      '/device/trackDevice/' +
+      deviceNumber +
+      '/' +
+      duration +
+      '/' +
+      frequency;
+    return this.http.get(url);
+  }
+
   changeIcon(id: number, data: FormData) {
     const url = environment.backUrl + '/device/changeIcon/' + id;
     return this.http.post<any[]>(url, data);
@@ -75,7 +87,7 @@ export class ApicallService {
     const url = environment.backUrl + '/history/getByFilter';
     return this.http.post<Locate[]>(url, data);
   }
-  getStatus(deviceNumber: number) {
+  getStatus(deviceNumber: string) {
     const url = environment.backUrl + '/message/checkStatus/' + deviceNumber;
     return this.http.get<any>(url);
   }
@@ -89,13 +101,28 @@ export class ApicallService {
     return this.http.get<HistoryData[]>(url);
   }
 
-  sendStopAlertMessage(phoneNumber: string, alertType: string) {
+  sendStopAlertMessage(deviceNumber: string, alertType: string) {
     const url =
       environment.backUrl +
       '/message/stopAlert/' +
       alertType +
       '/' +
-      phoneNumber;
+      deviceNumber;
     return this.http.get<any>(url);
+  }
+
+  changePowerStatus(deviceNumber: string, activated: boolean) {
+    const url =
+      environment.backUrl +
+      '/message/changePowerStatus/' +
+      deviceNumber +
+      '/' +
+      Number(!activated);
+    return this.http.get(url);
+  }
+
+  deleteDevice(deviceId: number): Observable<any> {
+    const url = environment.backUrl + '/device/delete/' + deviceId;
+    return this.http.get(url);
   }
 }

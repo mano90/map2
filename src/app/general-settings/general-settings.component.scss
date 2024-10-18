@@ -26,8 +26,9 @@
 .btn-header {
   background-color: transparent;
   color: #efefef;
-  width: 150px;
-  display: inline !important;
+  // width: 120px;
+  // display: inline !important;
+  // font-size: 15px;
 }
 .params {
   float: right;
@@ -91,4 +92,44 @@ header {
 }
 .image-form {
   width: 50px;
+}
+
+
+.background-container {
+  background-image: url('../../assets/map_background.jpg');
+  background-size: cover;
+  background-position: center;
+  height: 100%;
+}
+
+
+.disabledButton{
+  background-color: rgb(155, 152, 152) !important;
+}
+
+
+
+.mat-mdc-form-field-bottom-align {
+  margin-bottom: 0 !important; 
+  padding-bottom: 0 !important; 
+}
+
+.mat-mdc-form-field-subscript-wrapper {
+  display: none !important;
+}
+
+.mat-mdc-form-field-wrapper {
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+mat-form-field {
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.header {
+  background-color: var(--secondary-color) !important;
+  color: rgb(228, 228, 228);
+  font-weight: bolder;
 }

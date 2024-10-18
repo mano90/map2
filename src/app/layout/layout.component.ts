@@ -2,6 +2,7 @@ import {
   Component,
   ElementRef,
   HostListener,
+  OnDestroy,
   OnInit,
   ViewChild,
 } from '@angular/core';
@@ -54,7 +55,7 @@ const madagascarExtent = [...a, ...b];
   templateUrl: './layout.component.html',
   styleUrls: ['./layout.component.scss'],
 })
-export class LayoutComponent implements OnInit {
+export class LayoutComponent implements OnInit, OnDestroy {
   begin: Date;
   end: Date;
 
@@ -103,14 +104,13 @@ export class LayoutComponent implements OnInit {
     private socket: Socket
   ) {}
 
-sendMessage(message: string) {
+  sendMessage(message: string) {
     this.socket.emit('message', message);
   }
 
   reInitMap() {
     window.location.reload();
   }
-
 
   ngOnInit(): void {
     this.socket.connect();
@@ -237,7 +237,9 @@ sendMessage(message: string) {
       geometry: new Point(fromLonLat(points[0])),
     });
     marker.setStyle(markerStyle);
+
     this.vectorSource.addFeature(marker);
+
     let i = 0;
     const steps = 150;
     const delta = 1 / steps;
@@ -345,10 +347,6 @@ sendMessage(message: string) {
           this.overlay.setPosition(undefined);
 
           setTimeout(() => {
-            // this.stopFlashing(
-            //   feature.get('id'),
-            //   DeviceColorBlinking.BLINKCREDIT
-            // );
             window.location.reload();
           }, 2500);
         });
@@ -510,7 +508,6 @@ sendMessage(message: string) {
           type: 'route',
           geometry: route,
         });
-        console.log(routeFeature);
         this.vectorLayer.getSource().addFeature(routeFeature);
         const extent = routeFeature.getGeometry().getExtent();
         this.map.getView().fit(extent, {
@@ -604,7 +601,23 @@ sendMessage(message: string) {
           }),
         })
       );
-      this.flash([feat]);
+      const element = document.createElement('div');
+      element.className = 'flashing'; // Apply the CSS flashing class
+
+      // Optionally, set the size of the flashing element
+      element.style.width = '20px';
+      element.style.height = '20px';
+      element.style.borderRadius = '50%';
+
+      // Create an Overlay and attach the element to the map at the feature's position
+      const overlay = new Overlay({
+        position: fromLonLat([featureData.longitude, featureData.latitude]),
+        positioning: 'center-center',
+        element: element,
+        stopEvent: false,
+      });
+
+      // this.map.addOverlay(overlay);
       points.push(feat);
     }
     return points;
@@ -740,7 +753,6 @@ sendMessage(message: string) {
     this.vectorSource.addFeatures(segments);
   }
 
-
   flashMultiple(deviceColorBlinkings: FeatureToBlink[]) {
     deviceColorBlinkings.forEach((deviceItem) => {
       this.flashOne(deviceItem.featureId, deviceItem.deviceColorBlinking);
@@ -750,40 +762,31 @@ sendMessage(message: string) {
   flashOne(
     featureId: string,
     color: string = '255,255,0',
-    intervalDuration: number = 500
+    intervalDuration: number = 1000
   ) {
     const feature = this.getFeatureById(featureId);
     if (feature) {
       if (this.flashIntervals.has(featureId)) {
         const currentDataInterval = this.flashIntervals.get(featureId);
         const colorList: string[] = currentDataInterval.color;
-
         if (colorList.includes(color)) return;
-
         colorList.push(color);
-
-        this.stopFlashing(featureId);
-
         let currentIndex = 0;
+        let flashGeom: Geometry = feature.getGeometry()!.clone();
         const intervalId = setInterval(() => {
-          let flashGeom: Geometry = feature.getGeometry()!.clone();
-
           const currentColor = colorList[currentIndex];
           this.map.getLayers().forEach((item) => {
             this.applyPostrender(item, flashGeom, currentColor);
           });
-
           currentIndex = (currentIndex + 1) % colorList.length;
         }, intervalDuration);
-
+        clearInterval(currentDataInterval.intervalId);
         this.flashIntervals.set(featureId, { intervalId, color: colorList });
       } else {
         const colorList = [color];
         let currentIndex = 0;
-
+        let flashGeom: Geometry = feature.getGeometry()!.clone();
         const intervalId = setInterval(() => {
-          let flashGeom: Geometry = feature.getGeometry()!.clone();
-
           const currentColor = colorList[currentIndex];
           this.map.getLayers().forEach((item) => {
             this.applyPostrender(item, flashGeom, currentColor);
@@ -793,29 +796,6 @@ sendMessage(message: string) {
         }, intervalDuration);
 
         this.flashIntervals.set(featureId, { intervalId, color: colorList });
-      }
-    }
-  }
-  stopFlashing(featureId: string, colorToRemove?: string) {
-    console.log(featureId);
-    const intervalData = this.flashIntervals.get(String(featureId));
-
-    if (intervalData) {
-      const colorList: string[] = intervalData.color;
-
-      if (colorToRemove) {
-        const colorIndex = colorList.indexOf(colorToRemove);
-
-        if (colorIndex > -1) {
-          colorList.splice(colorIndex, 1);
-        }
-      }
-
-      if (colorList.length === 0) {
-        clearInterval(intervalData.intervalId);
-        this.flashIntervals.delete(featureId);
-      } else {
-        this.restartFlashing(featureId, colorList, intervalData.intervalId);
       }
     }
   }
@@ -828,42 +808,31 @@ sendMessage(message: string) {
     clearInterval(currentIntervalId);
 
     let currentIndex = 0;
+    const feature = this.getFeatureById(featureId);
 
-    const newIntervalId = setInterval(() => {
-      const feature = this.getFeatureById(featureId);
-      if (feature) {
-        let flashGeom: Geometry = feature.getGeometry()!.clone();
+    let flashGeom: Geometry = feature.getGeometry()!.clone();
 
+    if (feature) {
+      const newIntervalId = setInterval(() => {
         const currentColor = colorList[currentIndex];
         this.map.getLayers().forEach((item) => {
           this.applyPostrender(item, flashGeom, currentColor);
         });
         currentIndex = (currentIndex + 1) % colorList.length;
-      }
-    }, 500);
-    this.flashIntervals.set(String(featureId), {
-      intervalId: newIntervalId,
-      color: colorList,
-    });
-  flash(features: Feature[]) {
-    // setInterval(() => {
-    //   let flashGeom: Geometry[] = features.map((element) => {
-    //     return element.getGeometry()!.clone();
-    //   });
-    //   this.map.getLayers().forEach((item) => {
-    //     this.applyPostrender(item, flashGeom);
-    //   });
-    //   console.log('begin');
-    // }, 300);
+      }, 1000);
+      this.flashIntervals.set(String(featureId), {
+        intervalId: newIntervalId,
+        color: colorList,
+      });
+    }
   }
 
   private clearAllIntervals(): void {
     this.flashIntervals.forEach((intervalData, featureId) => {
-      console.log(intervalData.intervalId);
       clearInterval(intervalData.intervalId);
     });
-    console.log(this.flashIntervals);
-    this.flashIntervals.clear(); // Clear the map after all intervals are cleared
+
+    this.flashIntervals.clear();
   }
 
   private applyPostrender(
@@ -1032,5 +1001,8 @@ sendMessage(message: string) {
       }
     });
     return foundFeature;
+  }
+  ngOnDestroy(): void {
+    this.clearAllIntervals();
   }
 }

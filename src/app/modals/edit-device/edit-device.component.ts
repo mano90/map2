@@ -17,6 +17,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { ApicallService } from 'src/app/services/requests/apicall.service';
 import { NotificationService } from 'src/app/services/notification/notification.service';
+import { DeviceStatus } from 'src/app/classes/DeviceStatus';
 
 @Component({
   selector: 'app-edit-device',
@@ -67,6 +68,10 @@ export class EditDeviceComponent implements OnInit {
   onSubmit() {
     if (this.deviceForm.valid) {
       const data: Device = this.deviceForm.value;
+      if (this.data.edit == false) {
+        data.icon = '202402131343307751.png';
+        data.status = DeviceStatus.NEEDCONFIRMATION;
+      }
       if (this.id) data.id = this.id;
       this.service.saveDevice(data).subscribe({
         next: () => {
