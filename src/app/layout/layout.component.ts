@@ -46,6 +46,7 @@ import { Socket } from 'ngx-socket-io';
 import { environment } from 'src/environments/environment';
 import { DeviceColorBlinking } from '../classes/DeviceColorBlinking';
 import { Device, FeatureToBlink } from '../classes/Device';
+import { Router } from '@angular/router';
 
 const a = fromLonLat([43.5, -25.6]);
 const b = fromLonLat([50.5, -12.0]);
@@ -101,7 +102,8 @@ export class LayoutComponent implements OnInit, OnDestroy {
     private service: ApicallService,
     private notificationService: NotificationService,
     private backgroundMapService: BackgroundMapService,
-    private socket: Socket
+    private socket: Socket,
+    private router: Router
   ) {}
 
   sendMessage(message: string) {
@@ -1004,5 +1006,15 @@ export class LayoutComponent implements OnInit, OnDestroy {
   }
   ngOnDestroy(): void {
     this.clearAllIntervals();
+  }
+  deconnexion() {
+    this.notificationService
+      .confirm('Etes vous sur de vouloir vous déconnecter')
+      .then((response) => {
+        if (response.isConfirmed) {
+          localStorage.clear();
+          window.location.reload();
+        }
+      });
   }
 }

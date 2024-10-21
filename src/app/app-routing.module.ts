@@ -5,17 +5,35 @@ import { LayoutComponent } from './layout/layout.component';
 import { DeviceSettingsComponent } from './device-settings/device-settings.component';
 import { DeviceHistoryComponent } from './device-history/device-history.component';
 import { AccueilComponent } from './accueil/accueil.component';
+import { LoginComponent } from './login/login.component';
+import { authGuard } from './auth.guard';
+import { SettingsComponent } from './settings/settings.component';
 
 const routes: Routes = [
-  { path: '', component: LayoutComponent },
+  { path: '', component: LayoutComponent, canActivate: [authGuard] },
 
   {
     path: 'parametres',
-    component: GeneralSettingsComponent,
+    component: SettingsComponent,
+    canActivate: [authGuard],
   },
-  { path: 'device-history/:id/:filter', component: DeviceHistoryComponent },
-  { path: 'device', component: DeviceSettingsComponent },
-  { path: 'accueil', component: AccueilComponent },
+  {
+    path: 'materiel',
+    component: GeneralSettingsComponent,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'device-history/:id/:filter',
+    component: DeviceHistoryComponent,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'device',
+    component: DeviceSettingsComponent,
+    canActivate: [authGuard],
+  },
+  { path: 'accueil', component: AccueilComponent, canActivate: [authGuard] },
+  { path: 'login', component: LoginComponent },
 ];
 
 @NgModule({

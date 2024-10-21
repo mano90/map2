@@ -18,13 +18,20 @@
     </button>
     <mat-menu #belowMenu="matMenu" yPosition="below">
       <button
+        [routerLink]="['/materiel']"
+        routerLinkActive="router-link-active"
+        mat-menu-item
+      >
+        Matériels
+      </button>
+      <button
         [routerLink]="['/parametres']"
         routerLinkActive="router-link-active"
         mat-menu-item
       >
         Parametres
       </button>
-      <button mat-menu-item>Deconnexion</button>
+      <button mat-menu-item (click)="deconnexion()">Deconnexion</button>
     </mat-menu>
   </div>
 </header>

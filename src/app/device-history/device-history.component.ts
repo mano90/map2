@@ -5,6 +5,7 @@ import { MatSort } from '@angular/material/sort';
 import { ApicallService } from '../services/requests/apicall.service';
 import { HistoryData } from '../classes/HistoryData';
 import { ActivatedRoute, Router } from '@angular/router';
+import { NotificationService } from '../services/notification/notification.service';
 
 @Component({
   selector: 'app-device-history',
@@ -38,7 +39,8 @@ export class DeviceHistoryComponent implements OnInit {
   constructor(
     private service: ApicallService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private notificationService: NotificationService
   ) {}
   ngOnInit(): void {
     this.route.paramMap.subscribe((params) => {
@@ -119,5 +121,15 @@ export class DeviceHistoryComponent implements OnInit {
   }
   redirectMap() {
     this.router.navigate(['/']);
+  }
+  deconnexion() {
+    this.notificationService
+      .confirm('Etes vous sur de vouloir vous déconnecter')
+      .then((response) => {
+        if (response.isConfirmed) {
+          localStorage.clear();
+          this.router.navigate(['/']);
+        }
+      });
   }
 }

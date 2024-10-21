@@ -125,4 +125,9 @@ export class ApicallService {
     const url = environment.backUrl + '/device/delete/' + deviceId;
     return this.http.get(url);
   }
+  login(username: string, password: string): Observable<any> {
+    const url = environment.backUrl + '/user/login';
+    const data = { username, password };
+    return this.http.post(url, data);
+  }
 }

@@ -110,3 +110,11 @@ the track does not implement the frequency of track on the device
 
 
 field the function activatePower
+
+Paramètres: 
+Changer mot de passe, reset password, 
+Changer les paramèetres de queue, timeout,
+Changer numéro du serveur
+
+
+APIANA GRAPH NY HISTORIQUE D'ALERTE SY EXPORTATION PDF NY Etat mensuel

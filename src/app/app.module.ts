@@ -50,6 +50,8 @@ import { DeviceHistoryComponent } from './device-history/device-history.componen
 import { FormatCoordinatesPipe } from './format-coordinates.pipe';
 import { ErrorInterceptorService } from './interceptors/error-interceptor.service';
 import { AlertHistoryComponent } from './alert-history/alert-history.component';
+import { LoginComponent } from './login/login.component';
+import { AuthInterceptor } from './interceptors/auth.interceptor';
 const config: SocketIoConfig = { url: 'http://localhost:3000', options: {} };
 
 @NgModule({
@@ -65,6 +67,7 @@ const config: SocketIoConfig = { url: 'http://localhost:3000', options: {} };
     DeviceHistoryComponent,
     FormatCoordinatesPipe,
     AlertHistoryComponent,
+    LoginComponent,
   ],
   imports: [
     BrowserModule,
@@ -108,6 +111,8 @@ const config: SocketIoConfig = { url: 'http://localhost:3000', options: {} };
       useClass: ErrorInterceptorService,
       multi: true,
     },
+
+    { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
   ],
   bootstrap: [AppComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],

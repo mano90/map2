@@ -270,4 +270,15 @@ export class GeneralSettingsComponent implements OnInit, OnDestroy {
   redirectMap() {
     this.router.navigate(['/']);
   }
+
+  deconnexion() {
+    this.notificationService
+      .confirm('Etes vous sur de vouloir vous déconnecter')
+      .then((response) => {
+        if (response.isConfirmed) {
+          localStorage.clear();
+          this.router.navigate(['/']);
+        }
+      });
+  }
 }
