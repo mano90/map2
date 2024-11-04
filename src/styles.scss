@@ -124,7 +124,6 @@ body {
   transition-duration: 0.3s;
 }
 
-
 .updateData5 {
   background-color: var(--sixth-color);
   color: #efefef;
@@ -140,26 +139,28 @@ body {
 }
 
 .updateData6 {
-  background-color: var( --seventh-color);
+  background-color: var(--seventh-color);
   color: #efefef;
   transition-duration: 0.3s;
 }
 
 .updateData6:hover {
-  border-color: var( --seventh-color);
+  border-color: var(--seventh-color);
   border-width: 1px;
-  color: var( --seventh-color);
+  color: var(--seventh-color);
   background-color: transparent;
   transition-duration: 0.3s;
 }
 
-.titleItem{
-  background-color: var(--primary-color);
+.titleItem {
+  // background-color: var(--primary-color);
+  background-color: #efefefd7;
+  border: 1px solid #585353de;
   padding: 10px;
   border-radius: 10px;
-  color: #efefefde;
+  color: #585353de;
   font-weight: 100;
-  font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+  font-family: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
 }
 
 .header {

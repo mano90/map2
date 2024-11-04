@@ -125,9 +125,43 @@ export class ApicallService {
     const url = environment.backUrl + '/device/delete/' + deviceId;
     return this.http.get(url);
   }
-  login(username: string, password: string): Observable<any> {
+  login(name: string, password: string): Observable<any> {
     const url = environment.backUrl + '/user/login';
-    const data = { username, password };
+    const data = { name, password };
     return this.http.post(url, data);
+  }
+
+  resetPassword(name: string): Observable<any> {
+    const url = environment.backUrl + '/user/passwordForgot/' + name;
+    return this.http.get(url);
+  }
+  changePassword(
+    mail: string,
+    oldPassword: string,
+    newPassword: string
+  ): Observable<any> {
+    const url = environment.backUrl + '/user/changePassword';
+    const data = {
+      mail,
+      oldPassword,
+      newPassword,
+    };
+    return this.http.post(url, data);
+  }
+
+  getConfig(): Observable<any> {
+    const url = environment.backUrl + '/device/getConfig';
+    return this.http.get(url);
+  }
+
+  setConfig(item: string, value: number): Observable<any> {
+    const url =
+      environment.backUrl + '/device/changeConfig/' + item + '/' + value;
+    return this.http.get(url);
+  }
+
+  getListLog(): Observable<any> {
+    const url = environment.backUrl + '/errorLog/getList';
+    return this.http.get(url);
   }
 }

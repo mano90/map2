@@ -35,6 +35,7 @@ export class DeviceHistoryComponent implements OnInit {
     'status',
     'deviceNumber',
     'icon',
+    'courant',
   ];
   constructor(
     private service: ApicallService,
@@ -99,6 +100,7 @@ export class DeviceHistoryComponent implements OnInit {
                 'seuil',
                 'deviceNumber',
                 'icon',
+                'activated',
               ].includes(key)
             ) {
               historyToReturn.push(prevObj);

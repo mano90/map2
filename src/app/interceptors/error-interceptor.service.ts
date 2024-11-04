@@ -20,15 +20,19 @@ export class ErrorInterceptorService implements HttpInterceptor {
   ): Observable<HttpEvent<any>> {
     return next.handle(req).pipe(
       catchError((error: HttpErrorResponse) => {
-        console.log(error);
         if (error.status === 500) {
+          console.log(error.error);
           // Show SweetAlert error message for 500 Internal Server Error
           Swal.fire({
             icon: 'error',
             title: 'Oops...',
-            text: 'Something went wrong! Internal Server Error.',
+            text:
+              error.error.message ||
+              'Something went wrong! Internal Server Error.',
             confirmButtonText: 'Ok',
           });
+        } else {
+          console.log('ato');
         }
         return throwError(error); // Rethrow the error to allow further handling
       })

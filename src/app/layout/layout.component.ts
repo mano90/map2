@@ -173,7 +173,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
       drawnFeature.setStyle(
         new Style({
           fill: new Fill({
-            color: 'rgba(0, 0, 255, 0.9)',
+            color: 'rgba(0, 0, 255, 0.5)',
           }),
           zIndex: 999,
         })
@@ -281,15 +281,24 @@ export class LayoutComponent implements OnInit, OnDestroy {
   getDelimitations(id: number) {
     this.removeSquares();
     this.service.getDeviceById(id).subscribe((res) => {
-      const data: number[][] = [];
-      const limitesHG = res.limiteHG.split(',').map((e) => +e);
-      const limitesBD = res.limiteBD.split(',').map((e) => +e);
-      data.push(fromLonLat(limitesHG));
-      data.push(fromLonLat([limitesBD[0], limitesHG[1]]));
-      data.push(fromLonLat(limitesBD));
-      data.push(fromLonLat([limitesHG[0], limitesBD[1]]));
-      data.push(fromLonLat(limitesHG));
-      this.formatCoordinates(data, id);
+      if (res.limiteHG) {
+        const data: number[][] = [];
+
+        const limitesHG = res.limiteHG.split(',').map((e) => +e);
+        const limitesBD = res.limiteBD.split(',').map((e) => +e);
+        data.push(fromLonLat(limitesHG));
+        data.push(fromLonLat([limitesBD[0], limitesHG[1]]));
+        data.push(fromLonLat(limitesBD));
+        data.push(fromLonLat([limitesHG[0], limitesBD[1]]));
+        data.push(fromLonLat(limitesHG));
+        this.formatCoordinates(data, id);
+      } else {
+        // this.generateSquareContent(String(res.id!));
+        this.map.addInteraction(this.draw);
+        this.drawId = +id;
+
+        this.overlay.setPosition(undefined);
+      }
     });
   }
 
@@ -898,7 +907,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
     square.setStyle(
       new Style({
         fill: new Fill({
-          color: 'rgba(0, 0, 255, 0.9)',
+          color: 'rgba(0, 0, 255, 0.5)',
         }),
         zIndex: 999,
       })
@@ -972,6 +981,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
           const webMercator = transform(t, 'EPSG:4326', 'EPSG:3857');
 
           this.userLocation = [webMercator[0], webMercator[1]];
+          console.log(this.userLocation);
           const feature = new Feature({
             geometry: new Point(this.userLocation),
           });

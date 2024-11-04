@@ -213,4 +213,69 @@ export class NotificationService {
       return 0;
     });
   }
+
+  async getDelai(initialSeconds: number = 0): Promise<number> {
+    // Convert initialSeconds to hours, minutes, and seconds
+    const initialHours = Math.floor(initialSeconds / 3600);
+    const initialMinutes = Math.floor((initialSeconds % 3600) / 60);
+    const initialSecondsOnly = initialSeconds % 60;
+
+    let totalSeconds = 0;
+
+    return Swal.fire({
+      title: 'Entrez le délai',
+      html: `
+        <div>
+          <label for="hours">Heures:</label>
+          <input type="number" id="hours" class="swal2-input" min="0" max="23" value="${initialHours}">
+        </div>
+        <div>
+          <label for="minutes">Minutes:</label>
+          <input type="number" id="minutes" class="swal2-input" min="0" max="59" value="${initialMinutes}">
+        </div>
+        <div>
+          <label for="seconds">Secondes:</label>
+          <input type="number" id="seconds" class="swal2-input" min="0" max="59" value="${initialSecondsOnly}">
+        </div>
+      `,
+      focusConfirm: false,
+      showCancelButton: true,
+      confirmButtonText: 'Ok',
+      cancelButtonText: 'Annuler',
+      preConfirm: () => {
+        // Get values from input fields
+        const hours = (document.getElementById('hours') as HTMLInputElement)
+          .value;
+        const minutes = (document.getElementById('minutes') as HTMLInputElement)
+          .value;
+        const seconds = (document.getElementById('seconds') as HTMLInputElement)
+          .value;
+
+        // Validate input values
+        if (
+          +hours < 0 ||
+          +hours > 23 ||
+          +minutes < 0 ||
+          +minutes > 59 ||
+          +seconds < 0 ||
+          +seconds > 59
+        ) {
+          Swal.showValidationMessage('Veuillez entrer des valeurs valides');
+        }
+        totalSeconds = +hours * 3600 + +minutes * 60 + +seconds;
+
+        if (totalSeconds <= 0) {
+          Swal.showValidationMessage(
+            'Le délai doit être supérieur à 0 secondes'
+          );
+        }
+
+        return totalSeconds;
+      },
+    }).then(async (result) => {
+      if (result.isDenied) return -1;
+      if (result.isConfirmed) return Number(result.value);
+      return 0;
+    });
+  }
 }

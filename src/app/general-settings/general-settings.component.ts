@@ -222,8 +222,17 @@ export class GeneralSettingsComponent implements OnInit, OnDestroy {
   }
 
   changePowerStatus(deviceNumber: string, activated: boolean) {
-    this.service.changePowerStatus(deviceNumber, activated).subscribe((res) => {
-      console.log(res);
+    const text = activated
+      ? 'Etes vous sur de vouloir désactiver'
+      : 'Etes vous sur de vouloir activer';
+    this.notificationService.confirm(text).then((response) => {
+      if (response.isConfirmed) {
+        this.service
+          .changePowerStatus(deviceNumber, activated)
+          .subscribe((res) => {
+            console.log(res);
+          });
+      }
     });
   }
   changeStatusMultiple() {

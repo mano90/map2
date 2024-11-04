@@ -117,4 +117,46 @@ Changer les paramèetres de queue, timeout,
 Changer numéro du serveur
 
 
-APIANA GRAPH NY HISTORIQUE D'ALERTE SY EXPORTATION PDF NY Etat mensuel
+APIANA GRAPH NY HISTORIQUE D'ALERTE SY EXPORTATION PDF NY Etat mensue
+
+add the message error if a queue is already connected -> done
+
+for the latitude and longitude use . instead of , for separator
+
+Avadika association le table history sy device
+
+don't send message of confirmation if there is no message, almost the message will not changing anything
+
+
+
+UPDATING THE CONFIG IS DONE
+
+// RESTE
+
+implement the code for storing data in EEPROM
+implement the get GPS data split
+implement the case there is credit and need to transform credit to offer; -> 
+Don't need this, just check if the server sent an offer
+
+
+Ajouter une fonction dans le frontend pour afficher le status du device
+seuil, limites etc, dans le cas ou les instructions ont été envoyés mais 
+le device n'a pas répondu à temps
+
+Seules les alertes et les positions gps sont stocké en mémoires, 
+
+la confirmation de l'envoi du message doit être envoyé avant que les paramètres soit changés
+si le message n'est pas renvoyé, on ne change pas les paramètres
+
+
+Créer une table pour stocker les erreurs ,
+les champs d'erreurs à définir, 
+
+
+enlever le champs processed dans history_device;
+
+
+
+
+
+FARANY: AMBOARINA NY DELAI isakin'ny queue rapitso marainang serve
