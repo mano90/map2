@@ -15,7 +15,7 @@ import {
 } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { ApicallService } from 'src/app/services/requests/apicall.service';
+import { ApiLocalService } from 'src/app/services/requests/apicall.service';
 import { NotificationService } from 'src/app/services/notification/notification.service';
 import { DeviceStatus } from 'src/app/classes/DeviceStatus';
 
@@ -38,7 +38,7 @@ export class EditDeviceComponent implements OnInit {
   protected title = 'Ajouter';
   deviceForm: FormGroup;
   constructor(
-    private service: ApicallService,
+    private service: ApiLocalService,
     private formBuilder: FormBuilder,
     private notificationService: NotificationService,
     public dialogRef: MatDialogRef<EditDeviceComponent>,

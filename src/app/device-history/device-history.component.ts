@@ -2,7 +2,7 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
-import { ApicallService } from '../services/requests/apicall.service';
+import { ApiLocalService } from '../services/requests/apiLocal.service';
 import { HistoryData } from '../classes/HistoryData';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NotificationService } from '../services/notification/notification.service';
@@ -38,7 +38,7 @@ export class DeviceHistoryComponent implements OnInit {
     'courant',
   ];
   constructor(
-    private service: ApicallService,
+    private service: ApiLocalService,
     private route: ActivatedRoute,
     private router: Router,
     private notificationService: NotificationService

@@ -36,7 +36,7 @@ import { NgxSpinnerService } from 'ngx-spinner';
 import { Locate } from '../classes/Locate';
 import { CoordinateFormatterService } from '../services/coordinate-formatter.service';
 import { RtaService } from '../components/rta/rta.service';
-import { ApicallService } from '../services/requests/apicall.service';
+import { ApiLocalService } from '../services/requests/apiLocal.service';
 import { BehaviorSubject, filter } from 'rxjs';
 import { createBox } from 'ol/interaction/Draw';
 import { NotificationService } from '../services/notification/notification.service';
@@ -99,7 +99,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
     private _rta: RtaService,
     public modal: NgbModal,
     private spinner: NgxSpinnerService,
-    private service: ApicallService,
+    private service: ApiLocalService,
     private notificationService: NotificationService,
     private backgroundMapService: BackgroundMapService,
     private socket: Socket,
@@ -595,7 +595,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
             anchor: [0.5, 46],
             anchorXUnits: 'fraction',
             anchorYUnits: 'pixels',
-            src: `${environment.imageStaticUrl}${featureData.device.icon}`,
+            src: `assets/${featureData.device.icon}`,
             scale: [0.09, 0.09],
             opacity: 1,
           }),

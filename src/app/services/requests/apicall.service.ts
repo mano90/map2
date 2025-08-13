@@ -10,7 +10,7 @@ type ProfileOSRM = 'car' | 'bike' | 'foot' | 'driving';
 @Injectable({
   providedIn: 'root',
 })
-export class ApicallService {
+export class ApiLocalService {
   private http = inject(HttpClient);
 
   getAllDevices(): Observable<Locate[]> {

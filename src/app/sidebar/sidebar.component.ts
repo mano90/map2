@@ -9,7 +9,7 @@ import {
 import * as _moment from 'moment';
 import { default as _rollupMoment } from 'moment';
 import { DeviceStatus } from '../classes/DeviceStatus';
-import { ApicallService } from '../services/requests/apicall.service';
+import { ApiLocalService } from '../services/requests/apiLocal.service';
 import { Locate } from '../classes/Locate';
 import { HistoryDataFilter } from '../classes/HistoryData';
 const moment = _rollupMoment || _moment;
@@ -64,7 +64,7 @@ export class SidebarComponent implements OnInit {
 
   constructor(
     private _formBuilder: FormBuilder,
-    private service: ApicallService
+    private service: ApiLocalService
   ) {}
 
   ngOnInit(): void {}

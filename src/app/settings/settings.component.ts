@@ -24,7 +24,7 @@ import { Router, RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { HttpClientModule } from '@angular/common/http';
-import { ApicallService } from '../services/requests/apicall.service';
+import { ApiLocalService } from '../services/requests/apiLocal.service';
 import { Device } from '../classes/Device';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { EditDeviceComponent } from '../modals/edit-device/edit-device.component';
@@ -103,7 +103,7 @@ export class SettingsComponent implements OnInit {
   showPasswordForm: boolean = false;
   confirmPassword: string = '';
   constructor(
-    private service: ApicallService,
+    private service: ApiLocalService,
     private notificationService: NotificationService,
     public dialog: MatDialog,
     private spinner: NgxSpinnerService,

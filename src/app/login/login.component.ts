@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { ApicallService } from '../services/requests/apicall.service';
+import { ApiLocalService } from '../services/requests/apiLocal.service';
 import { Router } from '@angular/router';
 
 @Component({
@@ -13,7 +13,7 @@ export class LoginComponent {
 
   constructor(
     private fb: FormBuilder,
-    private service: ApicallService,
+    private service: ApiLocalService,
     private router: Router
   ) {
     this.loginForm = this.fb.group({
